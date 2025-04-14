@@ -1,0 +1,22 @@
+IMU datasheet:
+file:///C:/Users/Andre/Downloads/18224/ism330dhcx-1.pdf
+
+- SPI module might need different clock speed, check ex3 (ecppll -h) for pll generation
+
+LED matrix datasheet:
+https://files.seeedstudio.com/wiki/xiao-rgb-matrix/WS2812B-1010-DATASHEET.pdf
+
+WS2812 spec:
+https://learn.adafruit.com/adafruit-neopixel-uberguide/advanced-coding#writing-your-own-library-2894697
+
+fluid module:
+- input only comes every once in a while
+- fsm to maybe do a bit of pipelining
+
+
+Synthesizing steps:
+sv2v --write=adjacent *.sv\
+	&& yosys -p 'read_verilog *.v; synth_ecp5 -json synth_out.json -top ChipInterface'\
+	&& nextpnr-ecp5 --12k --json synth_out.json --lpf constraints.lpf --textcfg pnr_out.config\
+	&& ecppack --compress pnr_out.config bitstream.bit
+
