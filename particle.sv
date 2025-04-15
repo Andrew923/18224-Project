@@ -16,43 +16,50 @@ module particle
     parameter PHASE_OFFSET=0)
 (
   // handles influence from 3 particles
-  input int x0, y0, m0, vx0, vy0, 
-  input int x1, y1, m1, vx1, vy1, 
-  input int x2, y2, m2, vx2, vy2, 
+  input shortint x0, y0, m0, vx0, vy0, 
+  input shortint x1, y1, m1, vx1, vy1, 
+  input shortint x2, y2, m2, vx2, vy2, 
   // input data_t data,
   input logic btn_left, btn_right, btn_up, btn_down, // TODO: temporary control
   input logic clk,
   input logic reset,
-  output int x, y, m, vel_x, vel_y
+  output shortint x, y, m, vel_x, vel_y
 );
 
   // simulation parameters
-  parameter SPRING = 8;
-  parameter DAMPING = 5;
-  parameter TIME_STEP = 2;
+  parameter WIDTH = 16*16;
+  parameter SPRING = 8; // uses << 3 now
+  parameter DAMPING = 4; // uses >> 2 now
+  parameter TIME_STEP = 2; // changed to << 2 and >> 1
   parameter FORCE_MAG = 32;
 
   // store position, velocity, acceleration
-  int px;
-  int py;
-  int px_old; // needed for Verlet integration
-  int py_old;
-  int vx;
-  int vy;
-  int ax;
-  int ay;
-  int force_x, force_y;
+  shortint px;
+  shortint py;
+  shortint px_old; // needed for Verlet integration
+  shortint py_old;
+  shortint vx;
+  shortint vy;
+  shortint ax;
+  shortint ay;
+  shortint force_x, force_y;
 
   // temporary variables used during updating
-  int dx0, dy0, dx1, dy1, dx2, dy2; // deltas
-  int d0, d1, d2; // distances
-  int displace0, displace1, displace2;
-  int rel_vel_x0, rel_vel_x1, rel_vel_x2; // relative velocity
-  int rel_vel_y0, rel_vel_y1, rel_vel_y2; // for dampening
-  int damp0, damp1, damp2; // dampened amount
+  shortint dx0, dy0, dx1, dy1, dx2, dy2; // deltas
+  shortint d0, d1, d2; // distances
+  shortint displace0, displace1, displace2;
+  shortint rel_vel_x0, rel_vel_x1, rel_vel_x2; // relative velocity
+  shortint rel_vel_y0, rel_vel_y1, rel_vel_y2; // for dampening
+  shortint dampx0, dampx1, dampx2; // x component of dampening
+  shortint dampy0, dampy1, dampy2; // y component of dampening
+  shortint damp0, damp1, damp2; // dampened amount
+
+  // variables for time division multiplexing multiplication
+  shortint multa, multb;
 
   // counter for pipelining stages
-  parameter TOTAL_CYCLES = 1_000_000;
+  // parameter TOTAL_CYCLES = 1_000_000;
+  parameter TOTAL_CYCLES = 10_000;
   logic [$clog2(TOTAL_CYCLES+1):0] idx;
   logic clear;
   Counter #($clog2(TOTAL_CYCLES+1)+1) counter(clk, clear, idx);
@@ -65,6 +72,65 @@ module particle
     m = MASS;
     vel_x = vx;
     vel_y = vy;
+  end
+
+  // mux for multa, multb
+  always_comb begin
+    // TODO: might be index - 1?
+    case (idx)
+      PHASE_OFFSET + 17: begin
+        multa = rel_vel_x0;
+        multb = dx0;
+      end
+      PHASE_OFFSET + 18: begin
+        multa = rel_vel_y0;
+        multb = dy0;
+      end
+      PHASE_OFFSET + 20: begin
+        multa = (displace0 << 3) + damp0;
+        multb = dx0;
+      end
+      PHASE_OFFSET + 21: begin
+        multa = (displace0 << 3) + damp0;
+        multb = dy0;
+      end
+      PHASE_OFFSET + 30: begin
+        multa = rel_vel_x1;
+        multb = dx1;
+      end
+      PHASE_OFFSET + 31: begin
+        multa = rel_vel_y1;
+        multb = dy1;
+      end
+      PHASE_OFFSET + 33: begin
+        multa = (displace1 << 3) + damp1;
+        multb = dx1;
+      end
+      PHASE_OFFSET + 34: begin
+        multa = (displace1 << 3) + damp1;
+        multb = dy1;
+      end
+      PHASE_OFFSET + 43: begin
+        multa = rel_vel_x2;
+        multb = dx2;
+      end
+      PHASE_OFFSET + 44: begin
+        multa = rel_vel_y2;
+        multb = dy2;
+      end
+      PHASE_OFFSET + 46: begin
+        multa = (displace2 << 3) + damp2;
+        multb = dx2;
+      end
+      PHASE_OFFSET + 47: begin
+        multa = (displace2 << 3) + damp2;
+        multb = dy2;
+      end
+      default: begin
+        multa = 0;
+        multb = 0;
+      end
+    endcase
   end
   
   // sequential updates
@@ -115,16 +181,18 @@ module particle
         // Phases 1-8: parameter update
         //////////////////////////////
         PHASE_OFFSET + 1: begin
-          ax <= force_x / MASS;
+          ax <= (MASS == 16) ? (force_x >> 4) : (force_x >> 3);
+          // ax <= force_x / MASS;
         end
         PHASE_OFFSET + 2: begin
-          ay <= force_y / MASS;
+          ay <= (MASS == 16) ? (force_y >> 4) : (force_y >> 3);
+          // ay <= force_y / MASS;
         end
         PHASE_OFFSET + 3: begin
-          px <= 2 * px - px_old + ax * TIME_STEP * TIME_STEP;
+          px <= (px << 1) - px_old + (ax << 2);
         end
         PHASE_OFFSET + 4: begin
-          py <= 2 * py - py_old + ay * TIME_STEP * TIME_STEP;
+          py <= (py << 1) - py_old + (ay << 2);
         end
         PHASE_OFFSET + 5: begin
           px_old <= px;
@@ -133,10 +201,10 @@ module particle
           py_old <= py;
         end
         PHASE_OFFSET + 7: begin
-          vx <= (px - px_old) / TIME_STEP;
+          vx <= (px - px_old) >> 1;
         end
         PHASE_OFFSET + 8: begin
-          vy <= (py - py_old) / TIME_STEP;
+          vy <= (py - py_old) >> 1;
         end
 
         //////////////////////////////
@@ -149,19 +217,23 @@ module particle
           dy0 <= py - y0;
         end
         PHASE_OFFSET + 11: begin
-          d0 <= dx0 * dx0 + dy0 + dy0; // no sqrt :(
+          // manhattan distance for now for less multiplying
+          d0 <= dx0 + dy0;
+          // d0 <= dx0 * dx0 + dy0 * dy0; // no sqrt :(
         end
         //////////////////////////////
         // Phases 12-16: parameter update
         //////////////////////////////
         PHASE_OFFSET + 12: begin
           if (d0 > 0) begin
-            dx0 <= dx0 / d0;
+            // dx0 <= dx0 / d0;
+            dx0 <= dx0;
           end
         end
         PHASE_OFFSET + 13: begin
           if (d0 > 0) begin
-            dy0 <= dy0 / d0;
+            // dy0 <= dy0 / d0;
+            dy0 <= dy0;
           end
         end
         PHASE_OFFSET + 14: begin
@@ -184,163 +256,213 @@ module particle
         //////////////////////////////
         PHASE_OFFSET + 17: begin
           if (d0 > 0) begin
-            damp0 <= DAMPING * (rel_vel_x0 * dx0 + rel_vel_y0 * dy0);
+            // dampx0 <= rel_vel_x0 * dx0;
+            dampx0 <= multa * multb;
           end
         end
         PHASE_OFFSET + 18: begin
           if (d0 > 0) begin
-            ax <= ax + ((SPRING * displace0 + damp0) * dx0);
+            // dampy0 <= rel_vel_y0 * dy0;
+            dampy0 <= multa * multb;
           end
         end
         PHASE_OFFSET + 19: begin
           if (d0 > 0) begin
-            ay <= ay + ((SPRING * displace0 + damp0) * dy0);
+            damp0 <= (dampx0 + dampy0) >> 2;
+          end
+        end
+        PHASE_OFFSET + 20: begin
+          if (d0 > 0) begin
+            // ax <= ax + (((displace0 << 3) + damp0) * dx0);
+            ax <= ax + (multa * multb);
+          end
+        end
+        PHASE_OFFSET + 21: begin
+          if (d0 > 0) begin
+            // ay <= ay + (((displace0 << 3) + damp0) * dy0);
+            ay <= ay + (multa * multb);
           end
         end
 
         //////////////////////////////
-        // Phases 20-22: distance mass 1
+        // Phases 22-24: distance mass 1
         //////////////////////////////
-        PHASE_OFFSET + 20: begin
+        PHASE_OFFSET + 22: begin
           dx1 <= px - x1;
         end
-        PHASE_OFFSET + 21: begin
+        PHASE_OFFSET + 23: begin
           dy1 <= py - y1;
         end
-        PHASE_OFFSET + 22: begin
-          d1 <= dx1 * dx1 + dy1 + dy1; // no sqrt :(
-        end
-        //////////////////////////////
-        // Phases 23-27: parameter update
-        //////////////////////////////
-        PHASE_OFFSET + 23: begin
-          if (d1 > 0) begin
-            dx1 <= dx1 / d1;
-          end
-        end
         PHASE_OFFSET + 24: begin
-          if (d1 > 0) begin
-            dy1 <= dy1 / d1;
-          end
+          // manhattan distance for now for less multiplying
+          d1 <= dx1 + dy1;
+          // d1 <= dx1 * dx1 + dy1 * dy1; // no sqrt :(
         end
+        //////////////////////////////
+        // Phases 25-29: parameter update
+        //////////////////////////////
         PHASE_OFFSET + 25: begin
           if (d1 > 0) begin
-            displace1 <= d1 - REST1;
+            // dx1 <= dx1 / d1;
+            dx1 <= dx1;
           end
         end
         PHASE_OFFSET + 26: begin
           if (d1 > 0) begin
-            rel_vel_x1 <= vx - vx1;
+            // dy1 <= dy1 / d1;
+            dy1 <= dy1;
           end
         end
         PHASE_OFFSET + 27: begin
+          if (d1 > 0) begin
+            displace1 <= d1 - REST1;
+          end
+        end
+        PHASE_OFFSET + 28: begin
+          if (d1 > 0) begin
+            rel_vel_x1 <= vx - vx1;
+          end
+        end
+        PHASE_OFFSET + 29: begin
           if (d1 > 0) begin
             rel_vel_y1 <= vy - vy1;
           end
         end
         //////////////////////////////
-        // Phases 28-30: damping
+        // Phases 30-32: damping
         //////////////////////////////
-        PHASE_OFFSET + 28: begin
-          if (d1 > 0) begin
-            damp1 <= DAMPING * (rel_vel_x1 * dx1 + rel_vel_y1 * dy1);
-          end
-        end
-        PHASE_OFFSET + 29: begin
-          if (d1 > 0) begin
-            ax <= ax + ((SPRING * displace1 + damp1) * dx1);
-          end
-        end
         PHASE_OFFSET + 30: begin
           if (d1 > 0) begin
-            ay <= ay + ((SPRING * displace1 + damp1) * dy1);
+            // dampx1 <= rel_vel_x1 * dx1;
+            dampx1 <= multa * multb;
+          end
+        end
+        PHASE_OFFSET + 31: begin
+          if (d1 > 0) begin
+            // dampy1 <= rel_vel_y1 * dy1;
+            dampy1 <= multa * multb;
+          end
+        end
+        PHASE_OFFSET + 32: begin
+          if (d1 > 0) begin
+            damp1 <= (dampx1 + dampy1) >> 2;
+          end
+        end
+        PHASE_OFFSET + 33: begin
+          if (d1 > 0) begin
+            // ax <= ax + (((displace1 << 3) + damp1) * dx1);
+            ax <= ax + (multa * multb);
+          end
+        end
+        PHASE_OFFSET + 34: begin
+          if (d1 > 0) begin
+            // ay <= ay + (((displace1 << 3) + damp1) * dy1);
+            ay <= ay + (multa * multb);
           end
         end
 
         //////////////////////////////
-        // Phases 31-33: distance mass 2
+        // Phases 35-37: distance mass 2
         //////////////////////////////
-        PHASE_OFFSET + 31: begin
+        PHASE_OFFSET + 35: begin
           dx2 <= px - x2;
         end
-        PHASE_OFFSET + 32: begin
+        PHASE_OFFSET + 36: begin
           dy2 <= py - y2;
         end
-        PHASE_OFFSET + 33: begin
-          d2 <= dx2 * dx2 + dy2 + dy2; // no sqrt :(
+        PHASE_OFFSET + 37: begin
+          // manhattan distance for now for less multiplying
+          d2 <= dx2 + dy2;
+          // d2 <= dx2 * dx2 + dy2 * dy2; // no sqrt :(
         end
         //////////////////////////////
-        // Phases 34-38: parameter update
+        // Phases 38-42: parameter update
         //////////////////////////////
-        PHASE_OFFSET + 34: begin
+        PHASE_OFFSET + 38: begin
           if (d2 > 0) begin
-            dx2 <= dx2 / d2;
+            // dx2 <= dx2 / d2;
+            dx2 <= dx2;
           end
         end
-        PHASE_OFFSET + 35: begin
+        PHASE_OFFSET + 39: begin
           if (d2 > 0) begin
-            dy2 <= dy2 / d2;
+            // dy2 <= dy2 / d2;
+            dy2 <= dy2;
           end
         end
-        PHASE_OFFSET + 36: begin
+        PHASE_OFFSET + 40: begin
           if (d2 > 0) begin
             displace2 <= d2 - REST2;
           end
         end
-        PHASE_OFFSET + 37: begin
+        PHASE_OFFSET + 41: begin
           if (d2 > 0) begin
             rel_vel_x2 <= vx - vx2;
           end
         end
-        PHASE_OFFSET + 38: begin
+        PHASE_OFFSET + 42: begin
           if (d2 > 0) begin
             rel_vel_y2 <= vy - vy2;
           end
         end
         //////////////////////////////
-        // Phases 39-41: damping
+        // Phases 43-45: damping
         //////////////////////////////
-        PHASE_OFFSET + 39: begin
+        PHASE_OFFSET + 43: begin
           if (d2 > 0) begin
-            damp2 <= DAMPING * (rel_vel_x2 * dx2 + rel_vel_y2 * dy2);
+            // dampx2 <= rel_vel_x2 * dx2;
+            dampx2 <= multa * multb;
           end
         end
-        PHASE_OFFSET + 40: begin
+        PHASE_OFFSET + 44: begin
           if (d2 > 0) begin
-            ax <= ax + ((SPRING * displace2 + damp2) * dx2);
+            // dampy2 <= rel_vel_y2 * dy2;
+            dampy2 <= multa * multb;
           end
         end
-        PHASE_OFFSET + 41: begin
+        PHASE_OFFSET + 45: begin
           if (d2 > 0) begin
-            ay <= ay + ((SPRING * displace2 + damp2) * dy2);
+            damp2 <= (dampx2 + dampy2) >> 2;
+          end
+        end
+        PHASE_OFFSET + 46: begin
+          if (d2 > 0) begin
+            // ax <= ax + (((displace2 << 3) + damp2) * dx2);
+            ax <= ax + (multa * multb);
+          end
+        end
+        PHASE_OFFSET + 47: begin
+          if (d2 > 0) begin
+            // ay <= ay + (((displace2 << 3) + damp2) * dy2);
+            ay <= ay + (multa * multb);
           end
         end
 
         //////////////////////////////
-        // Phases 42-45: boundary checks
+        // Phases 48-51: boundary checks
         //////////////////////////////
-        PHASE_OFFSET + 42: begin
+        PHASE_OFFSET + 48: begin
           if (px < 0) begin
             px <= 0;
-            vx <= vx * -8;
+            vx <= -(vx >> 1);
           end
         end
-        PHASE_OFFSET + 43: begin
-          if (px >= 16) begin
-            px <= 15;
-            vx <= vx * -8;
+        PHASE_OFFSET + 49: begin
+          if (px >= WIDTH) begin
+            px <= WIDTH - 1;
+            vx <= -(vx >> 1);
           end
         end
-        PHASE_OFFSET + 44: begin
+        PHASE_OFFSET + 50: begin
           if (py < 0) begin
             py <= 0;
-            vy <= vy * -8;
+            vy <= -(vx >> 1);
           end
         end
-        PHASE_OFFSET + 45: begin
-          if (py >= 16) begin
-            py <= 15;
-            vy <= vy * -8;
+        PHASE_OFFSET + 51: begin
+          if (py >= WIDTH) begin
+            py <= WIDTH - 1;
+            vy <= -(vx >> 1);
           end
         end
       endcase

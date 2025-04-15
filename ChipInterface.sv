@@ -1,5 +1,8 @@
 `default_nettype none
 
+// debug macro since pll doesn't work well with cocotb
+`define DEBUG
+
 module ChipInterface
   (output logic led_data,
    output logic [7:0] led,
@@ -22,7 +25,16 @@ module ChipInterface
     .imu_data(data),
     .matrix(matrix),
     .o_out(led_data));
+  `ifdef DEBUG
+  logic toggle;
+  always_ff @(posedge clk) begin
+    toggle <= ~toggle;
+    if (toggle)
+      clk10 <= ~clk10;
+  end
+  `else
   pll spc_clock(.*);
+  `endif
   imu sensor(
     .reset(reset),
     .SDO(SDO),
@@ -43,6 +55,10 @@ module ChipInterface
 
   always_comb begin
     led = data[95:88];
+    `ifdef DEBUG
+    reset = ~rst_n;
+    `else
     reset = ~locked || ~rst_n;
+    `endif
   end
 endmodule: ChipInterface

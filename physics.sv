@@ -2,6 +2,7 @@
 
 // Note: this doesn't work with Yosys sadly so
 // I've destructured the variables center and peripheral
+// Reals also don't work!
 // 
 // stores position, old position and velocity
 // typedef struct {
@@ -24,6 +25,7 @@ module physics(
   input logic btn_left, btn_right, btn_up, btn_down,
   output logic matrix[15:0][15:0]
 );
+  logic next_matrix[15:0][15:0];
 
   // particle attributes
   int cx, cy, cm, cvx, cvy;
@@ -114,59 +116,101 @@ module physics(
   //////////////////////////////
   // Matrix output logic (glow around particles)
   //////////////////////////////
+  always_comb begin
+    next_matrix = 0;
+    for (int y = 0; y < 16; y++) begin
+      for (int x = 0; x < 16; x++) begin
+        if (((x - (cx >> 4)) <= 2 && (x - (cx >> 4)) >= -2)
+          && ((y - (cy >> 4)) <= 2 && (y - (cy >> 4)) >= -2)
+          && ((x - (cx >> 4)) + (y - (cy >> 4)) <= 3)
+          && ((x - (cx >> 4)) - (y - (cy >> 4)) <= 3)
+          && ((y - (cy >> 4)) - (x - (cx >> 4)) <= 3)
+          && ((x - (cx >> 4)) + (y - (cy >> 4)) >= -3)) begin
+          next_matrix[y][x] = 1'b1;
+        end
+        else if (((x - (p0x >> 4)) <= 2 && (x - (p0x >> 4)) >= -2)
+          && ((y - (p0y >> 4)) <= 2 && (y - (p0y >> 4)) >= -2)
+          && ((x - (p0x >> 4)) + (y - (p0y >> 4)) <= 3)
+          && ((x - (p0x >> 4)) - (y - (p0y >> 4)) <= 3)
+          && ((y - (p0y >> 4)) - (x - (p0x >> 4)) <= 3)
+          && ((x - (p0x >> 4)) + (y - (p0y >> 4)) >= -3)) begin
+          next_matrix[y][x] = 1'b1;
+        end
+        else if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
+          && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
+          && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
+          && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
+          && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
+          && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
+          next_matrix[y][x] = 1'b1;
+        end
+        else if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
+          && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
+          && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
+          && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
+          && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
+          && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
+          next_matrix[y][x] = 1'b1;
+        end
+      end
+    end
+  end
+
   always_ff @(posedge clk) begin
     if (reset)
       matrix <= 0;
     else begin
-      // slightly pipelined to check one condition for one pixel per cycle
-      if (wait_idx < 256 * 4) begin
-        // basically check if within radius 2
-        int y = wait_idx >> 4;
-        int x = wait_idx & 15;
-        // if ((dx <= 2 && dx >= -2) && (dy <= 2 && dy >= -2) && (dx + dy <= 3) && (dx - dy <= 3) && (dy - dx <= 3) && (dx + dy >= -3))
-        case (wait_idx[5:4])
-          0: begin
-            if (((x - (cx >> 4)) <= 2 && (x - (cx >> 4)) >= -2)
-              && ((y - (cy >> 4)) <= 2 && (y - (cy >> 4)) >= -2)
-              && ((x - (cx >> 4)) + (y - (cy >> 4)) <= 3)
-              && ((x - (cx >> 4)) - (y - (cy >> 4)) <= 3)
-              && ((y - (cy >> 4)) - (x - (cx >> 4)) <= 3)
-              && ((x - (cx >> 4)) + (y - (cy >> 4)) >= -3)) begin
-              matrix[y][x] <= 1'b1;
-            end
-          end
-          1: begin
-            if (((x - (p0x >> 4)) <= 2 && (x - (p0x >> 4)) >= -2)
-              && ((y - (p0y >> 4)) <= 2 && (y - (p0y >> 4)) >= -2)
-              && ((x - (p0x >> 4)) + (y - (p0y >> 4)) <= 3)
-              && ((x - (p0x >> 4)) - (y - (p0y >> 4)) <= 3)
-              && ((y - (p0y >> 4)) - (x - (p0x >> 4)) <= 3)
-              && ((x - (p0x >> 4)) + (y - (p0y >> 4)) >= -3)) begin
-              matrix[y][x] <= 1'b1;
-            end
-          end
-          2: begin
-            if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
-              && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
-              && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
-              && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
-              && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
-              && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
-              matrix[y][x] <= 1'b1;
-            end
-          end
-          3: begin
-            if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
-              && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
-              && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
-              && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
-              && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
-              && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
-              matrix[y][x] <= 1'b1;
-            end
-          end
-        endcase
-      end
+      if (wait_idx == (256 << 2))
+        matrix <= next_matrix;
+      // // slightly pipelined to check one condition for one pixel per cycle
+      // if (wait_idx < (256 << 2)) begin
+      //   // basically check if within radius 2
+      //   int y = wait_idx >> 4;
+      //   int x = wait_idx & 15;
+      //   // if ((dx <= 2 && dx >= -2) && (dy <= 2 && dy >= -2) && (dx + dy <= 3) && (dx - dy <= 3) && (dy - dx <= 3) && (dx + dy >= -3))
+      //   case (wait_idx[5:4])
+      //     0: begin
+      //       if (((x - (cx >> 4)) <= 2 && (x - (cx >> 4)) >= -2)
+      //         && ((y - (cy >> 4)) <= 2 && (y - (cy >> 4)) >= -2)
+      //         && ((x - (cx >> 4)) + (y - (cy >> 4)) <= 3)
+      //         && ((x - (cx >> 4)) - (y - (cy >> 4)) <= 3)
+      //         && ((y - (cy >> 4)) - (x - (cx >> 4)) <= 3)
+      //         && ((x - (cx >> 4)) + (y - (cy >> 4)) >= -3)) begin
+      //         next_matrix[y][x] <= 1'b1;
+      //       end
+      //     end
+      //     1: begin
+      //       if (((x - (p0x >> 4)) <= 2 && (x - (p0x >> 4)) >= -2)
+      //         && ((y - (p0y >> 4)) <= 2 && (y - (p0y >> 4)) >= -2)
+      //         && ((x - (p0x >> 4)) + (y - (p0y >> 4)) <= 3)
+      //         && ((x - (p0x >> 4)) - (y - (p0y >> 4)) <= 3)
+      //         && ((y - (p0y >> 4)) - (x - (p0x >> 4)) <= 3)
+      //         && ((x - (p0x >> 4)) + (y - (p0y >> 4)) >= -3)) begin
+      //         next_matrix[y][x] <= 1'b1;
+      //       end
+      //     end
+      //     2: begin
+      //       if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
+      //         && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
+      //         && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
+      //         && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
+      //         && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
+      //         && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
+      //         next_matrix[y][x] <= 1'b1;
+      //       end
+      //     end
+      //     3: begin
+      //       if (((x - (p1x >> 4)) <= 2 && (x - (p1x >> 4)) >= -2)
+      //         && ((y - (p1y >> 4)) <= 2 && (y - (p1y >> 4)) >= -2)
+      //         && ((x - (p1x >> 4)) + (y - (p1y >> 4)) <= 3)
+      //         && ((x - (p1x >> 4)) - (y - (p1y >> 4)) <= 3)
+      //         && ((y - (p1y >> 4)) - (x - (p1x >> 4)) <= 3)
+      //         && ((x - (p1x >> 4)) + (y - (p1y >> 4)) >= -3)) begin
+      //         next_matrix[y][x] <= 1'b1;
+      //       end
+      //     end
+      //   endcase
+      // end
     end
   end
 
