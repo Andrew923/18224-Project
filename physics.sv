@@ -39,6 +39,7 @@ module physics(
     .REST0(2*16),
     .REST1(2*16),
     .REST2(2*16),
+    .PHASE_OFFSET(0)
   ) center(
     p0x, p0y, p0m, p0vx, p0vy,
     p1x, p1y, p1m, p1vx, p1vy,
@@ -55,7 +56,8 @@ module physics(
     .INIT_Y(6*16),
     .REST0(2*16),
     .REST1(71), // 71 = 4.47 * 16
-    .REST2(71)
+    .REST2(71),
+    .PHASE_OFFSET(100)
   ) peripheral0(
     cx, cy, cm, cvx, cvy,    
     p1x, p1y, p1m, p1vx, p1vy,
@@ -72,7 +74,8 @@ module physics(
     .INIT_Y(10*16),
     .REST0(71),
     .REST1(2*16),
-    .REST2(71)
+    .REST2(71),
+    .PHASE_OFFSET(200)
   ) peripheral1(
     p0x, p0y, p0m, p0vx, p0vy,
     cx, cy, cm, cvx, cvy,    
@@ -90,6 +93,7 @@ module physics(
     .REST0(71),
     .REST1(71),
     .REST2(2*16),
+    .PHASE_OFFSET(300)
   ) peripheral2(
     p0x, p0y, p0m, p0vx, p0vy,
     p1x, p1y, p1m, p1vx, p1vy,

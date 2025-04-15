@@ -43,7 +43,8 @@ module physics (
 		.INIT_Y(128),
 		.REST0(32),
 		.REST1(32),
-		.REST2(32)
+		.REST2(32),
+		.PHASE_OFFSET(0)
 	) center(
 		.x0(p0x),
 		.y0(p0y),
@@ -78,7 +79,8 @@ module physics (
 		.INIT_Y(96),
 		.REST0(32),
 		.REST1(71),
-		.REST2(71)
+		.REST2(71),
+		.PHASE_OFFSET(100)
 	) peripheral0(
 		.x0(cx),
 		.y0(cy),
@@ -113,7 +115,8 @@ module physics (
 		.INIT_Y(160),
 		.REST0(71),
 		.REST1(32),
-		.REST2(71)
+		.REST2(71),
+		.PHASE_OFFSET(200)
 	) peripheral1(
 		.x0(p0x),
 		.y0(p0y),
@@ -148,7 +151,8 @@ module physics (
 		.INIT_Y(160),
 		.REST0(71),
 		.REST1(71),
-		.REST2(32)
+		.REST2(32),
+		.PHASE_OFFSET(300)
 	) peripheral2(
 		.x0(p0x),
 		.y0(p0y),
@@ -177,7 +181,7 @@ module physics (
 		.vel_x(p2vx),
 		.vel_y(p2vy)
 	);
-	parameter WAIT_CYCLES = 1000;
+	parameter WAIT_CYCLES = 10000;
 	wire [$clog2(WAIT_CYCLES + 1):0] wait_idx;
 	wire clear;
 	Counter #(.WIDTH($clog2(WAIT_CYCLES + 1) + 1)) wait_time(
@@ -189,18 +193,24 @@ module physics (
 	always @(posedge clk)
 		if (reset)
 			matrix <= 0;
-		else if (wait_idx < 256) begin : sv2v_autoblock_1
+		else if (wait_idx < 1024) begin : sv2v_autoblock_1
 			reg signed [31:0] y;
 			reg signed [31:0] x;
 			y = wait_idx >> 4;
 			x = wait_idx & 15;
-			if ((((x - (cx >> 4)) * (x - (cx >> 4))) + ((y - (cy >> 4)) * (y - (cy >> 4)))) <= 4)
-				matrix[(y * 16) + x] <= 1'b1;
-			else if ((((x - (p0x >> 4)) * (x - (p0x >> 4))) + ((y - (p0y >> 4)) * (y - (p0y >> 4)))) <= 4)
-				matrix[(y * 16) + x] <= 1'b1;
-			else if ((((x - (p1x >> 4)) * (x - (p1x >> 4))) + ((y - (p1y >> 4)) * (y - (p1y >> 4)))) <= 4)
-				matrix[(y * 16) + x] <= 1'b1;
-			else if ((((x - (p2x >> 4)) * (x - (p2x >> 4))) + ((y - (p2y >> 4)) * (y - (p2y >> 4)))) <= 4)
-				matrix[(y * 16) + x] <= 1'b1;
+			case (wait_idx[5:4])
+				0:
+					if ((((((((x - (cx >> 4)) <= 2) && ((x - (cx >> 4)) >= -2)) && (((y - (cy >> 4)) <= 2) && ((y - (cy >> 4)) >= -2))) && (((x - (cx >> 4)) + (y - (cy >> 4))) <= 3)) && (((x - (cx >> 4)) - (y - (cy >> 4))) <= 3)) && (((y - (cy >> 4)) - (x - (cx >> 4))) <= 3)) && (((x - (cx >> 4)) + (y - (cy >> 4))) >= -3))
+						matrix[(y * 16) + x] <= 1'b1;
+				1:
+					if ((((((((x - (p0x >> 4)) <= 2) && ((x - (p0x >> 4)) >= -2)) && (((y - (p0y >> 4)) <= 2) && ((y - (p0y >> 4)) >= -2))) && (((x - (p0x >> 4)) + (y - (p0y >> 4))) <= 3)) && (((x - (p0x >> 4)) - (y - (p0y >> 4))) <= 3)) && (((y - (p0y >> 4)) - (x - (p0x >> 4))) <= 3)) && (((x - (p0x >> 4)) + (y - (p0y >> 4))) >= -3))
+						matrix[(y * 16) + x] <= 1'b1;
+				2:
+					if ((((((((x - (p1x >> 4)) <= 2) && ((x - (p1x >> 4)) >= -2)) && (((y - (p1y >> 4)) <= 2) && ((y - (p1y >> 4)) >= -2))) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) <= 3)) && (((x - (p1x >> 4)) - (y - (p1y >> 4))) <= 3)) && (((y - (p1y >> 4)) - (x - (p1x >> 4))) <= 3)) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) >= -3))
+						matrix[(y * 16) + x] <= 1'b1;
+				3:
+					if ((((((((x - (p1x >> 4)) <= 2) && ((x - (p1x >> 4)) >= -2)) && (((y - (p1y >> 4)) <= 2) && ((y - (p1y >> 4)) >= -2))) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) <= 3)) && (((x - (p1x >> 4)) - (y - (p1y >> 4))) <= 3)) && (((y - (p1y >> 4)) - (x - (p1x >> 4))) <= 3)) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) >= -3))
+						matrix[(y * 16) + x] <= 1'b1;
+			endcase
 		end
 endmodule
