@@ -29,10 +29,12 @@ module ChipInterface (
 	wire locked;
 	wire clk10;
 	wire [95:0] data;
-	ws2812_demo led_module(
+	wire [255:0] matrix;
+	ws2812 led_module(
 		.clock(clk),
 		.reset(reset),
 		.imu_data(data),
+		.matrix(matrix),
 		.o_out(led_data)
 	);
 	pll spc_clock(
@@ -48,6 +50,16 @@ module ChipInterface (
 		.SPC(SPC),
 		.SDI(SDI),
 		.curr_data(data)
+	);
+	physics simulator(
+		.data(data),
+		.clk(clk),
+		.reset(reset),
+		.btn_left(btn_left),
+		.btn_right(btn_right),
+		.btn_up(btn_up),
+		.btn_down(btn_down),
+		.matrix(matrix)
 	);
 	always @(*) begin
 		led = data[95:88];

@@ -14,11 +14,13 @@ module ChipInterface
   logic reset, locked;
   logic clk10;
   data_t data;
+  logic matrix[15:0][15:0];
 
-  ws2812_demo led_module(
+  ws2812 led_module(
     .clock(clk),
     .reset(reset),
     .imu_data(data),
+    .matrix(matrix),
     .o_out(led_data));
   pll spc_clock(.*);
   imu sensor(
@@ -29,6 +31,15 @@ module ChipInterface
     .SPC(SPC),
     .SDI(SDI),
     .curr_data(data));
+  physics simulator(
+    .data(data),
+    .clk(clk),
+    .reset(reset),
+    .btn_left(btn_left),
+    .btn_right(btn_right),
+    .btn_up(btn_up),
+    .btn_down(btn_down),
+    .matrix(matrix));
 
   always_comb begin
     led = data[95:88];

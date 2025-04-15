@@ -6,10 +6,11 @@ typedef struct packed {
     logic [7:0] blue;
 } color_t;
 
-module ws2812_demo (
+module ws2812 (
     input logic clock,
     input logic reset,
     input data_t imu_data,
+    input logic matrix[15:0][15:0],
 
     // Output to the RGB LEDs
     output logic o_out
@@ -25,75 +26,81 @@ module ws2812_demo (
     color_t data[NUM_LEDS];
     logic in_bounds, done;
 
+    // IMU data display
+    // always_comb begin
+    //     for (int led_idx = 0; led_idx < 0 + 16; led_idx++) begin
+    //         data[15 - led_idx] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+    //     for (int led_idx = 16; led_idx < 16 + 16; led_idx++) begin
+    //         data[led_idx] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+    //     for (int led_idx = 32; led_idx < 32 + 16; led_idx++) begin
+    //         data[47 - (led_idx - 32)] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+    //     for (int led_idx = 48; led_idx < 48 + 16; led_idx++) begin
+    //         data[led_idx] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+    //     for (int led_idx = 64; led_idx < 64 + 16; led_idx++) begin
+    //         data[79 - (led_idx - 64)] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+    //     for (int led_idx = 80; led_idx < 80 + 16; led_idx++) begin
+    //         data[led_idx] = '{
+    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
+    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
+    //         };
+    //     end
+
+
+    //     for (int led_idx = 96; led_idx < NUM_LEDS; led_idx++) begin
+    //         data[led_idx] = '{
+    //             red: (led_idx == 96 + frame_idx) ? 8'd4 : 8'd0,
+    //             green: (led_idx == 97 + frame_idx) ? 8'd4 : 8'd0,
+    //             blue: (led_idx == 98 + frame_idx) ? 8'd4 : 8'd0
+    //         };
+    //     end
+    // end
+
+    // matrix display logic
     always_comb begin
-        for (int led_idx = 0; led_idx < 0 + 16; led_idx++) begin
-            data[15 - led_idx] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
+        // loop through 2 rows at a time
+        for (int start = 0; start < 256; start = start + 32) begin
+            // reverse even rows
+            for (int led_idx = start; led_idx < start + 16; led_idx++) begin
+                data[(start << 1) + 15 - led_idx] = '{
+                    red: matrix[led_idx] ? 8'd4 : 8'd0,
+                    green: matrix[led_idx] ? 8'd4 : 8'd0,
+                    blue: matrix[led_idx] ? 8'd4 : 8'd0
+                };
+            end
+            for (int led_idx = start + 16; led_idx < start + 32; led_idx++) begin
+                data[led_idx] = '{
+                    red: matrix[led_idx] ? 8'd4 : 8'd0,
+                    green: matrix[led_idx] ? 8'd4 : 8'd0,
+                    blue: matrix[led_idx] ? 8'd4 : 8'd0
+                };
+            end
         end
-        for (int led_idx = 16; led_idx < 16 + 16; led_idx++) begin
-            data[led_idx] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
-        end
-        for (int led_idx = 32; led_idx < 32 + 16; led_idx++) begin
-            data[47 - (led_idx - 32)] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
-        end
-        for (int led_idx = 48; led_idx < 48 + 16; led_idx++) begin
-            data[led_idx] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
-        end
-        for (int led_idx = 64; led_idx < 64 + 16; led_idx++) begin
-            data[79 - (led_idx - 64)] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
-        end
-        for (int led_idx = 80; led_idx < 80 + 16; led_idx++) begin
-            data[led_idx] = '{
-                red: imu_data[led_idx] ? 8'd4 : 8'd0,
-                green: imu_data[led_idx] ? 8'd4 : 8'd0,
-                blue: imu_data[led_idx] ? 8'd4 : 8'd0
-            };
-        end
-
-
-        for (int led_idx = 96; led_idx < NUM_LEDS; led_idx++) begin
-            data[led_idx] = '{
-                red: (led_idx == 96 + frame_idx) ? 8'd4 : 8'd0,
-                green: (led_idx == 97 + frame_idx) ? 8'd4 : 8'd0,
-                blue: (led_idx == 98 + frame_idx) ? 8'd4 : 8'd0
-            };
-        end
-    
-        // Old GPT animation for reference
-        // int anim_frame = frame_idx >> 7;  // Change every 128 cycles
-        // int k = (anim_frame < 8) ? anim_frame : 15 - anim_frame;
-    
-        // for (int led_idx = 0; led_idx < NUM_LEDS; led_idx++) begin
-        //     int x = led_idx % 16;
-        //     int y = led_idx / 16;
-        //     in_bounds = (x >= (8 - k) && x <= (8 + k)) && 
-        //                   (y >= (8 - k) && y <= (8 + k));
-
-        //     data[led_idx] = '{
-        //         red: in_bounds ? ((anim_frame < 8) ? 8'd4 : 8'h00) : 8'h00,
-        //         green: in_bounds ? (anim_frame >> 2) : 8'h00,
-        //         blue: in_bounds ? ((anim_frame < 8) ? 8'h00 : 8'd4) : 8'h00
-        //     };
-        // end
     end
 
     // Sequencing logic modified to reset frame_idx when done
