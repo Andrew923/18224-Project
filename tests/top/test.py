@@ -7,7 +7,14 @@ async def step_clock(dut):
     dut.clk.value = 0
     await Timer(10, units="ns")
    
-# TODO: helper function to extract current positions
+# helper function to extract current particle positions
+async def get_positions(dut):
+    dir(dut)
+    physics = dut._HierarchyObject__get_sub_handle_by_name('simulator')
+    return [(int(physics.cx.value) >> 4, int(physics.cy.value) >> 4),
+            (int(physics.p0x.value) >> 4, int(physics.p0y.value) >> 4),
+            (int(physics.p1x.value) >> 4, int(physics.p1y.value) >> 4),
+            (int(physics.p2x.value) >> 4, int(physics.p2y.value) >> 4)]
 
 # test if initial matrix pattern is observed
 @cocotb.test()
@@ -23,7 +30,7 @@ async def init_test(dut):
 
     points = [(8, 8), (6, 10), (8, 6), (10, 10)]
     print(f"Points: {points}")
-    import pdb; pdb.set_trace()
+    print(f"Actual points: {await get_positions(dut)}")
 
     matrix_str = str(dut.matrix.value)
     passed = True
