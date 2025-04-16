@@ -37,12 +37,13 @@ module imu(
   output logic SDI, // Serial Data Input
   output data_t curr_data);
 
-  enum logic [4:0] {START,
+  enum logic [4:0] {START, // turn on time 35 ms pg 13
                     CTRL9_XL,
                     CTRL4_C,
                     CTRL2_G,
                     CTRL1_XL,
                     WAIT,
+                    CHECK, // query STATUS_REG (1E)
                     OUTX_L_G,
                     OUTX_H_G,
                     OUTY_L_G,
@@ -95,6 +96,7 @@ module imu(
       CTRL4_C: addr <= 8'h13;
       CTRL2_G: addr <= 8'h11;
       CTRL1_XL: addr <= 8'h10;
+      CHECK: addr <= 8'h1E;
       OUTX_L_G: addr <= 8'h22;
       OUTX_H_G: addr <= 8'h23;
       OUTY_L_G: addr <= 8'h24;
@@ -105,7 +107,7 @@ module imu(
       OUTX_H_A: addr <= 8'h29;
       OUTY_L_A: addr <= 8'h2A;
       OUTY_H_A: addr <= 8'h2B;
-      OUTZ_L_A: addr <= 8'h1E;
+      OUTZ_L_A: addr <= 8'h2C;
       OUTZ_H_A: addr <= 8'h0F;
     endcase
 
@@ -149,7 +151,7 @@ module imu(
   // wait time for between each state
   // parameter STATE_DELAY = 100_000;
   // parameter STATE_DELAY = 1000;
-  parameter STATE_DELAY = 2;
+  parameter STATE_DELAY = 8;
   logic [$clog2(STATE_DELAY+1):0] delay;
   logic clear2;
   Counter #($clog2(STATE_DELAY+1)+1) delay_time(clk, clear2, delay);
@@ -161,12 +163,23 @@ module imu(
   always_comb begin
     next_state = curr_state;
     case (curr_state)
-      START: next_state = CTRL9_XL;
+      // turn on time
+      START: next_state = (wait_idx == 700_000) ? CTRL9_XL : START;
       CTRL9_XL: next_state = ((delay == STATE_DELAY)) ? CTRL4_C : CTRL9_XL;
       CTRL4_C: next_state = ((delay == STATE_DELAY)) ? CTRL2_G : CTRL4_C;
       CTRL2_G: next_state = ((delay == STATE_DELAY)) ? CTRL1_XL: CTRL2_G;
       CTRL1_XL: next_state = ((delay == STATE_DELAY)) ? WAIT : CTRL1_XL;
-      WAIT: next_state = (wait_idx == WAIT_CYCLES) ? OUTX_L_G : WAIT;
+      WAIT: next_state = (wait_idx == WAIT_CYCLES) ? CHECK : WAIT;
+      CHECK: begin
+        if (~done) begin
+          next_state = CHECK;
+        end
+        else if ((rdata & 8'd3) == 8'd3) begin // lowest 2 bits are gyro and accel ready
+          next_state = OUTX_L_G;
+        end else begin
+          next_state = WAIT;
+        end
+      end
       OUTX_L_G: next_state = ((delay == STATE_DELAY)) ? OUTX_H_G : OUTX_L_G;
       OUTX_H_G: next_state = ((delay == STATE_DELAY)) ? OUTY_L_G : OUTX_H_G;
       OUTY_L_G: next_state = ((delay == STATE_DELAY)) ? OUTY_H_G : OUTY_L_G;

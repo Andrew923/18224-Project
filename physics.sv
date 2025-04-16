@@ -167,7 +167,7 @@ module physics(
       // slightly pipelined to check one condition for one pixel per cycle
       if (wait_idx < (256 << 2)) begin
         // basically check if within radius 2
-        int y = wait_idx >> 4;
+        int y = (wait_idx >> 4) & 15;
         int x = wait_idx & 15;
         // if ((dx <= 2 && dx >= -2) && (dy <= 2 && dy >= -2) && (dx + dy <= 3) && (dx - dy <= 3) && (dy - dx <= 3) && (dx + dy >= -3))
         case (wait_idx[9:8])

@@ -15,7 +15,7 @@ module ChipInterface
    input logic rst_n, clk);
 
   logic reset, locked;
-  logic clk10;
+  // logic clk10;
   data_t data;
   logic matrix[15:0][15:0];
 
@@ -25,16 +25,16 @@ module ChipInterface
     .imu_data(data),
     .matrix(matrix),
     .o_out(led_data));
-  `ifdef DEBUG
-  logic toggle;
-  always_ff @(posedge clk) begin
-    toggle <= ~toggle;
-    if (toggle)
-      clk10 <= ~clk10;
-  end
-  `else
-  pll spc_clock(.*);
-  `endif
+  // `ifdef DEBUG
+  // logic toggle;
+  // always_ff @(posedge clk) begin
+  //   toggle <= ~toggle;
+  //   if (toggle)
+  //     clk10 <= ~clk10;
+  // end
+  // `else
+  // pll spc_clock(.*);
+  // `endif
   imu sensor(
     .reset(reset),
     .SDO(SDO),
@@ -55,11 +55,11 @@ module ChipInterface
     .matrix(matrix));
 
   always_comb begin
-    led = data[95:88];
-    `ifdef DEBUG
+    led = matrix[8:0];
+    // `ifdef DEBUG
     reset = ~rst_n;
-    `else
-    reset = ~locked || ~rst_n;
-    `endif
+    // `else
+    // reset = ~locked || ~rst_n;
+    // `endif
   end
 endmodule: ChipInterface
