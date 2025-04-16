@@ -21,87 +21,88 @@ module ws2812 (
     parameter NUM_LEDS = 256;
     parameter NUM_FRAMES = 1;
 
+    logic old_matrix[15:0][15:0];
     logic [$clog2(NUM_FRAMES+1):0] frame_idx;
     logic update, busy;
     color_t data[NUM_LEDS];
     logic in_bounds, done;
 
     // IMU data display
-    // always_comb begin
-    //     for (int led_idx = 0; led_idx < 0 + 16; led_idx++) begin
-    //         data[15 - led_idx] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-    //     for (int led_idx = 16; led_idx < 16 + 16; led_idx++) begin
-    //         data[led_idx] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-    //     for (int led_idx = 32; led_idx < 32 + 16; led_idx++) begin
-    //         data[47 - (led_idx - 32)] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-    //     for (int led_idx = 48; led_idx < 48 + 16; led_idx++) begin
-    //         data[led_idx] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-    //     for (int led_idx = 64; led_idx < 64 + 16; led_idx++) begin
-    //         data[79 - (led_idx - 64)] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-    //     for (int led_idx = 80; led_idx < 80 + 16; led_idx++) begin
-    //         data[led_idx] = '{
-    //             red: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             green: imu_data[led_idx] ? 8'd4 : 8'd0,
-    //             blue: imu_data[led_idx] ? 8'd4 : 8'd0
-    //         };
-    //     end
-
-
-    //     for (int led_idx = 96; led_idx < NUM_LEDS; led_idx++) begin
-    //         data[led_idx] = '{
-    //             red: (led_idx == 96 + frame_idx) ? 8'd4 : 8'd0,
-    //             green: (led_idx == 97 + frame_idx) ? 8'd4 : 8'd0,
-    //             blue: (led_idx == 98 + frame_idx) ? 8'd4 : 8'd0
-    //         };
-    //     end
-    // end
-
-    // matrix display logic
     always_comb begin
-        // loop through 2 rows at a time
-        for (int start = 0; start < 256; start = start + 32) begin
-            // reverse even rows
-            for (int led_idx = start; led_idx < start + 16; led_idx++) begin
-                data[(start << 1) + 15 - led_idx] = '{
-                    red: matrix[led_idx] ? 8'd4 : 8'd0,
-                    green: matrix[led_idx] ? 8'd4 : 8'd0,
-                    blue: matrix[led_idx] ? 8'd4 : 8'd0
-                };
-            end
-            for (int led_idx = start + 16; led_idx < start + 32; led_idx++) begin
-                data[led_idx] = '{
-                    red: matrix[led_idx] ? 8'd4 : 8'd0,
-                    green: matrix[led_idx] ? 8'd4 : 8'd0,
-                    blue: matrix[led_idx] ? 8'd4 : 8'd0
-                };
-            end
+        for (int led_idx = 0; led_idx < 0 + 16; led_idx++) begin
+            data[15 - led_idx] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+        for (int led_idx = 16; led_idx < 16 + 16; led_idx++) begin
+            data[led_idx] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+        for (int led_idx = 32; led_idx < 32 + 16; led_idx++) begin
+            data[47 - (led_idx - 32)] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+        for (int led_idx = 48; led_idx < 48 + 16; led_idx++) begin
+            data[led_idx] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+        for (int led_idx = 64; led_idx < 64 + 16; led_idx++) begin
+            data[79 - (led_idx - 64)] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+        for (int led_idx = 80; led_idx < 80 + 16; led_idx++) begin
+            data[led_idx] = '{
+                red: imu_data[led_idx] ? 8'd4 : 8'd0,
+                green: imu_data[led_idx] ? 8'd4 : 8'd0,
+                blue: imu_data[led_idx] ? 8'd4 : 8'd0
+            };
+        end
+
+
+        for (int led_idx = 96; led_idx < NUM_LEDS; led_idx++) begin
+            data[led_idx] = '{
+                red: (led_idx == 96 + frame_idx) ? 8'd4 : 8'd0,
+                green: (led_idx == 97 + frame_idx) ? 8'd4 : 8'd0,
+                blue: (led_idx == 98 + frame_idx) ? 8'd4 : 8'd0
+            };
         end
     end
+
+    // matrix display logic
+    // always_comb begin
+    //     // loop through 2 rows at a time
+    //     for (int start = 0; start < 256; start = start + 32) begin
+    //         // reverse even rows
+    //         for (int led_idx = start; led_idx < start + 16; led_idx++) begin
+    //             data[(start << 1) + 15 - led_idx] = '{
+    //                 red: old_matrix[led_idx] ? 8'd4 : 8'd0,
+    //                 green: old_matrix[led_idx] ? 8'd4 : 8'd0,
+    //                 blue: old_matrix[led_idx] ? 8'd4 : 8'd0
+    //             };
+    //         end
+    //         for (int led_idx = start + 16; led_idx < start + 32; led_idx++) begin
+    //             data[led_idx] = '{
+    //                 red: old_matrix[led_idx] ? 8'd4 : 8'd0,
+    //                 green: old_matrix[led_idx] ? 8'd4 : 8'd0,
+    //                 blue: old_matrix[led_idx] ? 8'd4 : 8'd0
+    //             };
+    //         end
+    //     end
+    // end
 
     // Sequencing logic modified to reset frame_idx when done
     always_ff @(posedge clock) begin
@@ -109,6 +110,7 @@ module ws2812 (
 
         if (reset || done) begin
             frame_idx <= 0;
+            old_matrix <= matrix;
         end
         else if (frame_idx < NUM_FRAMES && !busy) begin
             update <= 1;
@@ -135,10 +137,7 @@ module ws2812 (
 
 endmodule
 
-
-
-
-// You shouldn't need to worry about what's going on inside here
+// EX5
 module ws2812_inner #(
     parameter NUM_LEDS = 7,
     parameter CLK_FREQ = 10000000

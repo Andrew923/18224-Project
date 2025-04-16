@@ -14,32 +14,56 @@ module ws2812 (
 	parameter CLK_FREQ = 20000000;
 	parameter NUM_LEDS = 256;
 	parameter NUM_FRAMES = 1;
+	reg [255:0] old_matrix;
 	reg [$clog2(NUM_FRAMES + 1):0] frame_idx;
 	reg update;
 	wire busy;
 	reg [(NUM_LEDS * 24) - 1:0] data;
 	wire in_bounds;
 	wire done;
-	always @(*) begin : sv2v_autoblock_1
-		reg signed [31:0] start;
-		for (start = 0; start < 256; start = start + 32)
-			begin
-				begin : sv2v_autoblock_2
-					reg signed [31:0] led_idx;
-					for (led_idx = start; led_idx < (start + 16); led_idx = led_idx + 1)
-						data[((NUM_LEDS - 1) - (((start << 1) + 15) - led_idx)) * 24+:24] = {(matrix[led_idx * 16+:16] ? 8'd4 : 8'd0), (matrix[led_idx * 16+:16] ? 8'd4 : 8'd0), (matrix[led_idx * 16+:16] ? 8'd4 : 8'd0)};
-				end
-				begin : sv2v_autoblock_3
-					reg signed [31:0] led_idx;
-					for (led_idx = start + 16; led_idx < (start + 32); led_idx = led_idx + 1)
-						data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(matrix[led_idx * 16+:16] ? 8'd4 : 8'd0), (matrix[led_idx * 16+:16] ? 8'd4 : 8'd0), (matrix[led_idx * 16+:16] ? 8'd4 : 8'd0)};
-				end
-			end
+	always @(*) begin
+		begin : sv2v_autoblock_1
+			reg signed [31:0] led_idx;
+			for (led_idx = 0; led_idx < 16; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - (15 - led_idx)) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_2
+			reg signed [31:0] led_idx;
+			for (led_idx = 16; led_idx < 32; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_3
+			reg signed [31:0] led_idx;
+			for (led_idx = 32; led_idx < 48; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - (79 - led_idx)) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_4
+			reg signed [31:0] led_idx;
+			for (led_idx = 48; led_idx < 64; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_5
+			reg signed [31:0] led_idx;
+			for (led_idx = 64; led_idx < 80; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - (143 - led_idx)) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_6
+			reg signed [31:0] led_idx;
+			for (led_idx = 80; led_idx < 96; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0), (imu_data[led_idx] ? 8'd4 : 8'd0)};
+		end
+		begin : sv2v_autoblock_7
+			reg signed [31:0] led_idx;
+			for (led_idx = 96; led_idx < NUM_LEDS; led_idx = led_idx + 1)
+				data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(led_idx == (96 + frame_idx) ? 8'd4 : 8'd0), (led_idx == (97 + frame_idx) ? 8'd4 : 8'd0), (led_idx == (98 + frame_idx) ? 8'd4 : 8'd0)};
+		end
 	end
 	always @(posedge clock) begin
 		update <= 0;
-		if (reset || done)
+		if (reset || done) begin
 			frame_idx <= 0;
+			old_matrix <= matrix;
+		end
 		else if ((frame_idx < NUM_FRAMES) && !busy)
 			update <= 1;
 		if (update)

@@ -50,7 +50,8 @@ module spi(
                     DI1,
                     DI0_n,
                     DI0,
-                    DONE} curr_state, next_state;
+                    DONE, // DONE2 state for CS to go high after SPC
+                    DONE2} curr_state, next_state;
 
   // next state logic
   always_comb begin
@@ -89,14 +90,15 @@ module spi(
       DI1: next_state = DI0_n;
       DI0_n: next_state = DI0;
       DI0: next_state = DONE;
-      DONE: next_state = WAIT;
+      DONE: next_state = DONE2;
+      DONE2: next_state = WAIT;
     endcase
   end
 
   // output logic
   always_comb begin
-    CS = (curr_state == WAIT || curr_state == DONE);
-    done = (curr_state == DONE);
+    CS = (curr_state == WAIT || curr_state == DONE2);
+    done = (curr_state == DONE2);
   end
   
   always_ff @(posedge clk) begin
@@ -149,6 +151,7 @@ module spi(
       DI0_n: SPC <= 1'b0;
       DI0: SPC <= 1'b1;
       DONE: SPC <= 1'b1;
+      DONE2: SPC <= 1'b1;
     endcase
 
     // SDI

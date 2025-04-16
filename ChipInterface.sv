@@ -1,7 +1,7 @@
 `default_nettype none
 
 // debug macro since pll doesn't work well with cocotb
-`define DEBUG
+// `define DEBUG
 
 module ChipInterface
   (output logic led_data,
@@ -38,7 +38,8 @@ module ChipInterface
   imu sensor(
     .reset(reset),
     .SDO(SDO),
-    .clk(clk10),
+    // .clk(clk10),
+    .clk(clk),
     .CS(CS),
     .SPC(SPC),
     .SDI(SDI),

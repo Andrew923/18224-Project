@@ -42,11 +42,22 @@ module Counter_async
      output logic [WIDTH-1:0] Q);
 
     // asynchronous clear
-    always_ff @(posedge clock, posedge clear)
-        if (clear) begin
-            Q <= '0;
-        end
-        else begin
-          Q <= Q + 1;
-        end
+    always_ff @(posedge clear)
+        Q <= '0;
+    always_ff @(posedge clock)
+        Q <= Q + 1;
 endmodule : Counter_async
+
+// edge detector
+module edge_det
+    (input logic signal,
+     input logic clk,
+     output logic edge_seen);
+
+    logic old_signal;
+    always_ff @(posedge clk)
+        old_signal <= signal;
+
+    assign edge_seen = ~old_signal & signal;
+        
+endmodule: edge_det

@@ -63,12 +63,13 @@ module spi (
 			6'd30: next_state = 6'd31;
 			6'd31: next_state = 6'd32;
 			6'd32: next_state = 6'd33;
-			6'd33: next_state = 6'd0;
+			6'd33: next_state = 6'd34;
+			6'd34: next_state = 6'd0;
 		endcase
 	end
 	always @(*) begin
-		CS = (curr_state == 6'd0) || (curr_state == 6'd33);
-		done = curr_state == 6'd33;
+		CS = (curr_state == 6'd0) || (curr_state == 6'd34);
+		done = curr_state == 6'd34;
 	end
 	always @(posedge clk) begin
 		case (curr_state)
@@ -117,6 +118,7 @@ module spi (
 			6'd31: SPC <= 1'b0;
 			6'd32: SPC <= 1'b1;
 			6'd33: SPC <= 1'b1;
+			6'd34: SPC <= 1'b1;
 		endcase
 		case (curr_state)
 			6'd1: SDI <= read;
