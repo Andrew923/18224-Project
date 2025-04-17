@@ -132,13 +132,13 @@ module physics(
   endgenerate
 
   always_comb begin
-    // check if within radius 2 to points
+    // check if within radius 2 to any particle
     for (shortint y = 0; y < 16; y++) begin
       for (shortint x = 0; x < 16; x++) begin
         next_matrix[y][x] = (valid[(((y << 4) + x) << 2) + 0]
                           || valid[(((y << 4) + x) << 2) + 1]
                           || valid[(((y << 4) + x) << 2) + 2]
-                          || valid[(((y << 4) + x) << 2) + 2]);
+                          || valid[(((y << 4) + x) << 2) + 3]);
       end
     end
     
@@ -148,9 +148,8 @@ module physics(
     if (reset)
       matrix <= 0;
     else begin
-      if (wait_idx == (256 << 2)) begin
+      if (wait_idx == 0)
         matrix <= next_matrix;
-      end
     end
   end
 

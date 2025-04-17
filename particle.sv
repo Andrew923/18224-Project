@@ -31,7 +31,7 @@ module particle
   parameter SPRING = 8; // uses << 3 now
   parameter DAMPING = 4; // uses >> 2 now
   parameter TIME_STEP = 2; // changed to << 2 and >> 1
-  parameter FORCE_MAG = 32;
+  parameter FORCE_MAG = 4;
 
   // store position, velocity, acceleration
   shortint px;
@@ -58,8 +58,7 @@ module particle
   shortint multa, multb;
 
   // counter for pipelining stages
-  // parameter TOTAL_CYCLES = 1_000_000;
-  parameter TOTAL_CYCLES = 10_000;
+  parameter TOTAL_CYCLES = 1_000_000;
   logic [$clog2(TOTAL_CYCLES+1):0] idx;
   logic clear;
   Counter #($clog2(TOTAL_CYCLES+1)+1) counter(clk, clear, idx);
@@ -76,7 +75,6 @@ module particle
 
   // mux for multa, multb
   always_comb begin
-    // TODO: might be index - 1?
     case (idx)
       PHASE_OFFSET + 17: begin
         multa = rel_vel_x0;

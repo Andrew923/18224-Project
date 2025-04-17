@@ -84,7 +84,7 @@ module imu_multi(
     .done(done_multi));
 
   // mux for which outputs to use
-  always_comb begin // TODO
+  always_comb begin
     if (curr_state == READ) begin
       SPC = SPC_multi;
       CS = CS_multi;
@@ -116,8 +116,8 @@ module imu_multi(
     case (curr_state)
       CTRL9_XL: addr <= 8'h18;
       CTRL4_C: addr <= 8'h13;
-      CTRL2_G: addr <= 8'h11;
-      CTRL1_XL: addr <= 8'h10;
+      CTRL2_G: addr <= 8'h11; // these addresses are swapped
+      CTRL1_XL: addr <= 8'h10; // but it doesn't really matter
       READ: addr <= 8'h22;
     endcase
 
@@ -125,8 +125,8 @@ module imu_multi(
     case (curr_state)
       CTRL9_XL: wdata <= 8'b1110_0010;
       CTRL4_C: wdata <= 8'b0000_0100;
-      CTRL2_G: wdata <= 8'b0101_0000;
-      CTRL1_XL: wdata <= 8'b0101_0000;
+      CTRL2_G: wdata <= 8'b0110_0000;
+      CTRL1_XL: wdata <= 8'b0110_0000;
     endcase
 
   end
@@ -135,19 +135,27 @@ module imu_multi(
     // reading state
     case (curr_state)
       WAIT: next_data <= 96'd0;
-      READ: next_data <= rdata;
+      // need to reorganize bits since low order comes before high
+      READ: next_data <= '{
+        pitch: {rdata[15:8], rdata[7:0]},
+        roll: {rdata[31:24], rdata[23:16]},
+        yaw: {rdata[47:40], rdata[39:32]},
+        x: {rdata[63:56], rdata[55:48]},
+        y: {rdata[79:72], rdata[71:64]},
+        z: {rdata[95:88], rdata[87:80]}
+      };
     endcase
   end
 
   // counter to rate limit a bit and not overload imu
-  parameter WAIT_CYCLES = 1_000_000;
+  parameter WAIT_CYCLES = 4_000_000;
   logic [$clog2(WAIT_CYCLES+1):0] wait_idx;
   logic clear;
   Counter #($clog2(WAIT_CYCLES+1)+1) wait_time(clk, clear, wait_idx);
   assign clear = curr_state == DONE || curr_state == CTRL1_XL;
 
   // wait time for between each config write
-  parameter STATE_DELAY = 8;
+  parameter STATE_DELAY = 1000;
   logic [$clog2(STATE_DELAY+1):0] delay;
   logic clear2;
   Counter #($clog2(STATE_DELAY+1)+1) delay_time(clk, clear2, delay);
@@ -159,12 +167,12 @@ module imu_multi(
   always_comb begin
     next_state = curr_state;
     case (curr_state)
-      // turn on time
+      // turn on time is 35 ms
       START: next_state = (wait_idx == 700_000) ? CTRL9_XL : START;
-      CTRL9_XL: next_state = ((delay == STATE_DELAY)) ? CTRL4_C : CTRL9_XL;
-      CTRL4_C: next_state = ((delay == STATE_DELAY)) ? CTRL2_G : CTRL4_C;
-      CTRL2_G: next_state = ((delay == STATE_DELAY)) ? CTRL1_XL: CTRL2_G;
-      CTRL1_XL: next_state = ((delay == STATE_DELAY)) ? WAIT : CTRL1_XL;
+      CTRL9_XL: next_state = (delay == STATE_DELAY) ? CTRL4_C : CTRL9_XL;
+      CTRL4_C: next_state = (delay == STATE_DELAY) ? CTRL2_G : CTRL4_C;
+      CTRL2_G: next_state = (delay == STATE_DELAY) ? CTRL1_XL: CTRL2_G;
+      CTRL1_XL: next_state = (delay == STATE_DELAY) ? WAIT : CTRL1_XL;
       WAIT: next_state = (wait_idx == WAIT_CYCLES) ? READ : WAIT;
       READ: next_state = (done_multi) ? DONE : READ;
       DONE: next_state = WAIT;

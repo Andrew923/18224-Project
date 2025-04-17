@@ -222,7 +222,7 @@ module spi_multi (
 			6'd29: next_state = 6'd30;
 			6'd30: next_state = 6'd31;
 			6'd31: next_state = 6'd32;
-			6'd32: next_state = (byte_idx < BYTES ? 6'd17 : 6'd33);
+			6'd32: next_state = ((byte_idx + 1) < BYTES ? 6'd17 : 6'd33);
 			6'd33: next_state = 6'd34;
 			6'd34: next_state = 6'd0;
 		endcase
@@ -281,8 +281,8 @@ module spi_multi (
 			6'd34: SPC <= 1'b1;
 		endcase
 		case (curr_state)
-			6'd1: SDI <= 1'b0;
-			6'd2: SDI <= 1'b0;
+			6'd1: SDI <= 1'b1;
+			6'd2: SDI <= 1'b1;
 			6'd3: SDI <= addr[6];
 			6'd4: SDI <= addr[6];
 			6'd5: SDI <= addr[5];
@@ -300,13 +300,13 @@ module spi_multi (
 		endcase
 	end
 	always @(posedge clk)
-		if (reset) begin
+		if (reset)
 			curr_state <= 6'd0;
-			byte_idx <= 0;
-		end
 		else begin
 			curr_state <= next_state;
-			if (next_state == 6'd32)
+			if (next_state == 6'd16)
+				byte_idx <= 0;
+			if ((curr_state != next_state) && (curr_state == 6'd32))
 				byte_idx <= byte_idx + 1;
 		end
 endmodule

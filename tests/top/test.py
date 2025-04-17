@@ -46,7 +46,7 @@ async def init_test(dut):
     print(f"Initial Points: {points}")
     print(f"Actual points: {await get_positions(dut)}")
 
-    matrix_str = str(dut.matrix.value)
+    matrix_str = str(dut.matrix.value)[::-1]
     print("Matrix:")
     for i in range(16):
         print(matrix_str[i*16:i*16+16])
@@ -97,7 +97,7 @@ async def ws2812_test(dut):
     for _ in range(10_400):
         await FallingEdge(dut.clk)
 
-    matrix_str = str(dut.matrix.value)
+    matrix_str = str(dut.matrix.value)[::-1]
     print("Matrix:")
     for i in range(16):
         print(matrix_str[i*16:i*16+16])

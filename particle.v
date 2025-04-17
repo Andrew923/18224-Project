@@ -64,7 +64,7 @@ module particle (
 	parameter SPRING = 8;
 	parameter DAMPING = 4;
 	parameter TIME_STEP = 2;
-	parameter FORCE_MAG = 32;
+	parameter FORCE_MAG = 4;
 	reg signed [15:0] px;
 	reg signed [15:0] py;
 	reg signed [15:0] px_old;
@@ -104,7 +104,7 @@ module particle (
 	reg signed [15:0] damp2;
 	reg signed [15:0] multa;
 	reg signed [15:0] multb;
-	parameter TOTAL_CYCLES = 10000;
+	parameter TOTAL_CYCLES = 1000000;
 	wire [$clog2(TOTAL_CYCLES + 1):0] idx;
 	wire clear;
 	Counter #(.WIDTH($clog2(TOTAL_CYCLES + 1) + 1)) counter(

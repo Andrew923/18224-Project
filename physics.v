@@ -234,12 +234,12 @@ module physics (
 			begin : sv2v_autoblock_2
 				reg signed [15:0] x;
 				for (x = 0; x < 16; x = x + 1)
-					next_matrix[(y * 16) + x] = ((valid[(((y << 4) + x) << 2) + 0] || valid[(((y << 4) + x) << 2) + 1]) || valid[(((y << 4) + x) << 2) + 2]) || valid[(((y << 4) + x) << 2) + 2];
+					next_matrix[(y * 16) + x] = ((valid[(((y << 4) + x) << 2) + 0] || valid[(((y << 4) + x) << 2) + 1]) || valid[(((y << 4) + x) << 2) + 2]) || valid[(((y << 4) + x) << 2) + 3];
 			end
 	end
 	always @(posedge clk)
 		if (reset)
 			matrix <= 0;
-		else if (wait_idx == 1024)
+		else if (wait_idx == 0)
 			matrix <= next_matrix;
 endmodule

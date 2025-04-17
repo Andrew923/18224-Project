@@ -296,7 +296,7 @@ module spi_multi
       DI1_n: next_state = DI1;
       DI1: next_state = DI0_n;
       DI0_n: next_state = DI0;
-      DI0: next_state = (byte_idx < BYTES) ? DI7_n : DONE;
+      DI0: next_state = (byte_idx + 1 < BYTES) ? DI7_n : DONE;
       DONE: next_state = DONE2;
       DONE2: next_state = WAIT;
     endcase
@@ -363,8 +363,8 @@ module spi_multi
 
     // SDI
     case (curr_state)
-      RW_n: SDI <= 1'b0; // always read
-      RW: SDI <= 1'b0;
+      RW_n: SDI <= 1'b1; // always read
+      RW: SDI <= 1'b1;
       AD6_n: SDI <= addr[6];
       AD6: SDI <= addr[6];
       AD5_n: SDI <= addr[5];
@@ -385,11 +385,12 @@ module spi_multi
   always_ff @(posedge clk) begin
     if (reset) begin
       curr_state <= WAIT;
-      byte_idx <= 0;
     end
     else begin
       curr_state <= next_state;
-      if (next_state == DI0)
+      if (next_state == AD0)
+        byte_idx <= 0;
+      if (curr_state != next_state && curr_state == DI0)
         byte_idx <= byte_idx + 1;
     end
   end

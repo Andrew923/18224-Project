@@ -79,23 +79,27 @@ module imu_multi (
 		case (curr_state)
 			5'd1: addr <= 8'h18;
 			5'd2: addr <= 8'h13;
-			5'd3: addr <= 8'h11;
-			5'd4: addr <= 8'h10;
+			5'd3: addr <= 8'h10;
+			5'd4: addr <= 8'h11;
 			5'd6: addr <= 8'h22;
 		endcase
 		case (curr_state)
 			5'd1: wdata <= 8'b11100010;
 			5'd2: wdata <= 8'b00000100;
-			5'd3: wdata <= 8'b01010000;
-			5'd4: wdata <= 8'b01010000;
+			5'd3: wdata <= 8'b01100000;
+			5'd4: wdata <= 8'b01100000;
 		endcase
 	end
+	function automatic [15:0] sv2v_cast_16;
+		input reg [15:0] inp;
+		sv2v_cast_16 = inp;
+	endfunction
 	always @(posedge clk)
 		case (curr_state)
 			5'd5: next_data <= 96'd0;
-			5'd6: next_data <= rdata;
+			5'd6: next_data <= {sv2v_cast_16({rdata[15:8], rdata[7:0]}), sv2v_cast_16({rdata[31:24], rdata[23:16]}), sv2v_cast_16({rdata[47:40], rdata[39:32]}), sv2v_cast_16({rdata[63:56], rdata[55:48]}), sv2v_cast_16({rdata[79:72], rdata[71:64]}), sv2v_cast_16({rdata[95:88], rdata[87:80]})};
 		endcase
-	parameter WAIT_CYCLES = 1000000;
+	parameter WAIT_CYCLES = 4000000;
 	wire [$clog2(WAIT_CYCLES + 1):0] wait_idx;
 	wire clear;
 	Counter #(.WIDTH($clog2(WAIT_CYCLES + 1) + 1)) wait_time(
@@ -104,7 +108,7 @@ module imu_multi (
 		.Q(wait_idx)
 	);
 	assign clear = (curr_state == 5'd7) || (curr_state == 5'd4);
-	parameter STATE_DELAY = 8;
+	parameter STATE_DELAY = 1000;
 	wire [$clog2(STATE_DELAY + 1):0] delay;
 	wire clear2;
 	Counter #(.WIDTH($clog2(STATE_DELAY + 1) + 1)) delay_time(
