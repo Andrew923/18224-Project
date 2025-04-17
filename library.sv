@@ -61,3 +61,32 @@ module edge_det
     assign edge_seen = ~old_signal & signal;
         
 endmodule: edge_det
+
+// checks if points in radius 2
+module radius_check
+    (input shortint x, y, x1, y1,
+     output logic valid);
+
+    shortint dx, dy;
+    always_comb begin
+        dx = x - x1;
+        dy = y - y1;
+
+        // hard code cases because this probably synthesizes
+        // better than Euclidean distance
+        valid = ((dx == 0 && dy == -2)
+              || (dx == 0 && dy == -1)
+              || (dx == 0 && dy == 0)
+              || (dx == 0 && dy == 1)
+              || (dx == 0 && dy == 2)
+              || (dx == 1 && dy == -1)
+              || (dx == 1 && dy == 0)
+              || (dx == 1 && dy == 1)
+              || (dx == -1 && dy == -1)
+              || (dx == -1 && dy == 0)
+              || (dx == -1 && dy == 1)
+              || (dx == 2 && dy == 0)
+              || (dx == -2 && dy == 0));
+    end
+    
+endmodule: radius_check

@@ -53,3 +53,23 @@ module edge_det (
 	always @(posedge clk) old_signal <= signal;
 	assign edge_seen = ~old_signal & signal;
 endmodule
+module radius_check (
+	x,
+	y,
+	x1,
+	y1,
+	valid
+);
+	input wire signed [15:0] x;
+	input wire signed [15:0] y;
+	input wire signed [15:0] x1;
+	input wire signed [15:0] y1;
+	output reg valid;
+	reg signed [15:0] dx;
+	reg signed [15:0] dy;
+	always @(*) begin
+		dx = x - x1;
+		dy = y - y1;
+		valid = (((((((((((((dx == 0) && (dy == -2)) || ((dx == 0) && (dy == -1))) || ((dx == 0) && (dy == 0))) || ((dx == 0) && (dy == 1))) || ((dx == 0) && (dy == 2))) || ((dx == 1) && (dy == -1))) || ((dx == 1) && (dy == 0))) || ((dx == 1) && (dy == 1))) || ((dx == -1) && (dy == -1))) || ((dx == -1) && (dy == 0))) || ((dx == -1) && (dy == 1))) || ((dx == 2) && (dy == 0))) || ((dx == -2) && (dy == 0));
+	end
+endmodule

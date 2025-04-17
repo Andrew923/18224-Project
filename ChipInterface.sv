@@ -35,7 +35,7 @@ module ChipInterface
   // `else
   // pll spc_clock(.*);
   // `endif
-  imu sensor(
+  imu_multi sensor(
     .reset(reset),
     .SDO(SDO),
     // .clk(clk10),

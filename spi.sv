@@ -311,7 +311,7 @@ module spi_multi
   always_ff @(posedge clk) begin
     // input logic (capture on rising edge)
     case (curr_state)
-      WAIT: rdata <= 8'd0;
+      WAIT: rdata <= 96'd0;
       DI7: rdata[(byte_idx << 3) + 7] <= SDO;
       DI6: rdata[(byte_idx << 3) + 6] <= SDO;
       DI5: rdata[(byte_idx << 3) + 5] <= SDO;
@@ -363,8 +363,8 @@ module spi_multi
 
     // SDI
     case (curr_state)
-      RW_n: SDI <= read;
-      RW: SDI <= read;
+      RW_n: SDI <= 1'b0; // always read
+      RW: SDI <= 1'b0;
       AD6_n: SDI <= addr[6];
       AD6: SDI <= addr[6];
       AD5_n: SDI <= addr[5];

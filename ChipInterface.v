@@ -27,7 +27,6 @@ module ChipInterface (
 	input wire clk;
 	reg reset;
 	wire locked;
-	wire clk10;
 	wire [95:0] data;
 	wire [255:0] matrix;
 	ws2812 led_module(
@@ -37,12 +36,7 @@ module ChipInterface (
 		.matrix(matrix),
 		.o_out(led_data)
 	);
-	pll spc_clock(
-		.clk(clk),
-		.clk10(clk10),
-		.locked(locked)
-	);
-	imu sensor(
+	imu_multi sensor(
 		.reset(reset),
 		.SDO(SDO),
 		.clk(clk),
@@ -62,7 +56,7 @@ module ChipInterface (
 		.matrix(matrix)
 	);
 	always @(*) begin
-		led = data[95:88];
-		reset = ~locked || ~rst_n;
+		led = matrix[0+:144];
+		reset = ~rst_n;
 	end
 endmodule

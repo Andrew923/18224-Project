@@ -54,7 +54,13 @@ async def init_test(dut):
     passed = True
     for i in range(16):
         for j, v in enumerate(matrix_str[i*16:i*16+16]):
-            if any(((x - j) ** 2 + (y - i) ** 2) ** 0.5 <= 2 for x, y in points):
+            # if any(((x - j) ** 2 + (y - i) ** 2) ** 0.5 <= 2 for x, y in points):
+            if any((-2 <= x - j <= 2)
+                   and (-2 <= y - i <= 2)
+                   and (x - j + y - i <= 3)
+                   and (x - j - (y - i) <= 3)
+                   and (y - i - (x - j) <= 3)
+                   and (x - j + y - i >= -3) for x, y in points):
                 if (int(v) != 1):
                     print(f"mismatch at point ({i}, {j}) expected 1, got {v}")
                     passed = False
@@ -105,7 +111,6 @@ async def ws2812_test(dut):
     await RisingEdge(dut.led_data)
     curr = get_sim_time(units="us")
     while (diff :=((curr - start_time) % (1.25 * 256))) > 1.25 and diff < (320 - 1.25):
-        print((curr - start_time) % (1.25 * 256)) # 320
         await RisingEdge(dut.led_data)
         curr = get_sim_time(units="us")
 

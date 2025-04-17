@@ -49,9 +49,9 @@ module imu_multi(
   data_t next_data;
 
   // internal spi modules do the hard work
-  logic [7:0] addr, wdata;
-  logic enable_single, done_single;
-  logic enable_multi, done_multi;
+  logic [7:0] addr, wdata, rdata_old;
+  logic done_single, done_multi;
+  logic enable_single, enable_multi;
   logic SPC_single, SPC_multi;
   logic CS_single, CS_multi;
   logic SDI_single, SDI_multi;
@@ -66,12 +66,12 @@ module imu_multi(
     .SPC(SPC_single),
     .CS(CS_single),
     .SDI(SDI_single),
-    .rdata(8'd0),
+    .rdata(rdata_old),
     .done(done_single));
 
   logic [95:0] rdata;
   // 12 bytes: 3 accel, 3 gyro, 2 bytes per field
-  spi_multi #(6) spi_reader(
+  spi_multi #(12) spi_reader(
     .addr(addr),
     .clk(clk),
     .enable(enable_multi),
@@ -100,11 +100,11 @@ module imu_multi(
   // enable is an edge detection for new state
   logic next_enable_single, next_enable_multi;
   assign next_enable_single = ((curr_state != next_state)
-                    && (next_state == CTRL_9_XL
+                    && (next_state == CTRL9_XL
                     || next_state == CTRL4_C
                     || next_state == CTRL2_G
                     || next_state == CTRL1_XL));
-  assign next_enable_multi == ((curr_state != next_state)
+  assign next_enable_multi = ((curr_state != next_state)
                     && (next_state == READ));
 
   // interfacing with internal spi module
@@ -144,7 +144,7 @@ module imu_multi(
   logic [$clog2(WAIT_CYCLES+1):0] wait_idx;
   logic clear;
   Counter #($clog2(WAIT_CYCLES+1)+1) wait_time(clk, clear, wait_idx);
-  assign clear = curr_state == OUTZ_H_A || curr_state == CTRL1_XL;
+  assign clear = curr_state == DONE || curr_state == CTRL1_XL;
 
   // wait time for between each config write
   parameter STATE_DELAY = 8;
@@ -152,8 +152,8 @@ module imu_multi(
   logic clear2;
   Counter #($clog2(STATE_DELAY+1)+1) delay_time(clk, clear2, delay);
 
-  // edge detector for done
-  edge_det done_edge(done, clk, clear2);
+  // edge detector for done_single (only writing)
+  edge_det done_edge(done_single, clk, clear2);
 
   // next state logic
   always_comb begin
@@ -166,7 +166,7 @@ module imu_multi(
       CTRL2_G: next_state = ((delay == STATE_DELAY)) ? CTRL1_XL: CTRL2_G;
       CTRL1_XL: next_state = ((delay == STATE_DELAY)) ? WAIT : CTRL1_XL;
       WAIT: next_state = (wait_idx == WAIT_CYCLES) ? READ : WAIT;
-      READ: next_sate = (done_multi) ? DONE : READ;
+      READ: next_state = (done_multi) ? DONE : READ;
       DONE: next_state = WAIT;
     endcase
   end

@@ -18,26 +18,26 @@ module physics (
 	input wire btn_down;
 	output reg [255:0] matrix;
 	reg [255:0] next_matrix;
-	wire signed [31:0] cx;
-	wire signed [31:0] cy;
-	wire signed [31:0] cm;
-	wire signed [31:0] cvx;
-	wire signed [31:0] cvy;
-	wire signed [31:0] p0x;
-	wire signed [31:0] p0y;
-	wire signed [31:0] p0m;
-	wire signed [31:0] p0vx;
-	wire signed [31:0] p0vy;
-	wire signed [31:0] p1x;
-	wire signed [31:0] p1y;
-	wire signed [31:0] p1m;
-	wire signed [31:0] p1vx;
-	wire signed [31:0] p1vy;
-	wire signed [31:0] p2x;
-	wire signed [31:0] p2y;
-	wire signed [31:0] p2m;
-	wire signed [31:0] p2vx;
-	wire signed [31:0] p2vy;
+	wire signed [15:0] cx;
+	wire signed [15:0] cy;
+	wire signed [15:0] cm;
+	wire signed [15:0] cvx;
+	wire signed [15:0] cvy;
+	wire signed [15:0] p0x;
+	wire signed [15:0] p0y;
+	wire signed [15:0] p0m;
+	wire signed [15:0] p0vx;
+	wire signed [15:0] p0vy;
+	wire signed [15:0] p1x;
+	wire signed [15:0] p1y;
+	wire signed [15:0] p1m;
+	wire signed [15:0] p1vx;
+	wire signed [15:0] p1vy;
+	wire signed [15:0] p2x;
+	wire signed [15:0] p2y;
+	wire signed [15:0] p2m;
+	wire signed [15:0] p2vx;
+	wire signed [15:0] p2vy;
 	particle #(
 		.MASS(16),
 		.INIT_X(128),
@@ -191,33 +191,55 @@ module physics (
 		.Q(wait_idx)
 	);
 	assign clear = reset;
+	genvar yy;
+	genvar xx;
+	wire [1023:0] valid;
+	generate
+		for (yy = 0; yy < 16; yy = yy + 1) begin : genblk1
+			for (xx = 0; xx < 16; xx = xx + 1) begin : genblk1
+				radius_check c(
+					.x(xx),
+					.y(yy),
+					.x1(cx >> 4),
+					.y1(cy >> 4),
+					.valid(valid[(((yy << 4) + xx) << 2) + 0])
+				);
+				radius_check p0(
+					.x(xx),
+					.y(yy),
+					.x1(p0x >> 4),
+					.y1(p0y >> 4),
+					.valid(valid[(((yy << 4) + xx) << 2) + 1])
+				);
+				radius_check p1(
+					.x(xx),
+					.y(yy),
+					.x1(p1x >> 4),
+					.y1(p1y >> 4),
+					.valid(valid[(((yy << 4) + xx) << 2) + 2])
+				);
+				radius_check p2(
+					.x(xx),
+					.y(yy),
+					.x1(p2x >> 4),
+					.y1(p2y >> 4),
+					.valid(valid[(((yy << 4) + xx) << 2) + 3])
+				);
+			end
+		end
+	endgenerate
+	always @(*) begin : sv2v_autoblock_1
+		reg signed [15:0] y;
+		for (y = 0; y < 16; y = y + 1)
+			begin : sv2v_autoblock_2
+				reg signed [15:0] x;
+				for (x = 0; x < 16; x = x + 1)
+					next_matrix[(y * 16) + x] = ((valid[(((y << 4) + x) << 2) + 0] || valid[(((y << 4) + x) << 2) + 1]) || valid[(((y << 4) + x) << 2) + 2]) || valid[(((y << 4) + x) << 2) + 2];
+			end
+	end
 	always @(posedge clk)
 		if (reset)
 			matrix <= 0;
-		else begin
-			if (wait_idx == 1024) begin
-				matrix <= next_matrix;
-				next_matrix <= 0;
-			end
-			if (wait_idx < 1024) begin : sv2v_autoblock_1
-				reg signed [31:0] y;
-				reg signed [31:0] x;
-				y = wait_idx >> 4;
-				x = wait_idx & 15;
-				case (wait_idx[9:8])
-					0:
-						if ((((((((x - (cx >> 4)) <= 2) && ((x - (cx >> 4)) >= -2)) && (((y - (cy >> 4)) <= 2) && ((y - (cy >> 4)) >= -2))) && (((x - (cx >> 4)) + (y - (cy >> 4))) <= 3)) && (((x - (cx >> 4)) - (y - (cy >> 4))) <= 3)) && (((y - (cy >> 4)) - (x - (cx >> 4))) <= 3)) && (((x - (cx >> 4)) + (y - (cy >> 4))) >= -3))
-							next_matrix[(y * 16) + x] <= 1'b1;
-					1:
-						if ((((((((x - (p0x >> 4)) <= 2) && ((x - (p0x >> 4)) >= -2)) && (((y - (p0y >> 4)) <= 2) && ((y - (p0y >> 4)) >= -2))) && (((x - (p0x >> 4)) + (y - (p0y >> 4))) <= 3)) && (((x - (p0x >> 4)) - (y - (p0y >> 4))) <= 3)) && (((y - (p0y >> 4)) - (x - (p0x >> 4))) <= 3)) && (((x - (p0x >> 4)) + (y - (p0y >> 4))) >= -3))
-							next_matrix[(y * 16) + x] <= 1'b1;
-					2:
-						if ((((((((x - (p1x >> 4)) <= 2) && ((x - (p1x >> 4)) >= -2)) && (((y - (p1y >> 4)) <= 2) && ((y - (p1y >> 4)) >= -2))) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) <= 3)) && (((x - (p1x >> 4)) - (y - (p1y >> 4))) <= 3)) && (((y - (p1y >> 4)) - (x - (p1x >> 4))) <= 3)) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) >= -3))
-							next_matrix[(y * 16) + x] <= 1'b1;
-					3:
-						if ((((((((x - (p1x >> 4)) <= 2) && ((x - (p1x >> 4)) >= -2)) && (((y - (p1y >> 4)) <= 2) && ((y - (p1y >> 4)) >= -2))) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) <= 3)) && (((x - (p1x >> 4)) - (y - (p1y >> 4))) <= 3)) && (((y - (p1y >> 4)) - (x - (p1x >> 4))) <= 3)) && (((x - (p1x >> 4)) + (y - (p1y >> 4))) >= -3))
-							next_matrix[(y * 16) + x] <= 1'b1;
-				endcase
-			end
-		end
+		else if (wait_idx == 1024)
+			matrix <= next_matrix;
 endmodule

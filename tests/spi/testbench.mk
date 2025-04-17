@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
 VERILOG_SOURCES = $(shell pwd)/../../*.v /mnt/c/Users/Andre/Downloads/18224/oss-cad-suite/share/yosys/ecp5/cells_bb.v
-TOPLEVEL = spi
+TOPLEVEL = spi_multi
 MODULE = test
 SIM = verilator
 EXTRA_ARGS += --trace --trace-structs -Wno-fatal
