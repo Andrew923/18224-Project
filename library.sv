@@ -64,6 +64,21 @@ endmodule: edge_det
 
 // checks if points in radius 2
 module radius_check
+#( // extra parameters to set if certain pixels are on
+   // at specific angles
+    parameter logic ON_0 = 1,
+    parameter logic ON_30 = 0,
+    parameter logic ON_60 = 0,
+    parameter logic ON_90 = 1,
+    parameter logic ON_120 = 0,
+    parameter logic ON_150 = 0,
+    parameter logic ON_180 = 1,
+    parameter logic ON_210 = 0,
+    parameter logic ON_240 = 0,
+    parameter logic ON_270 = 1,
+    parameter logic ON_300 = 0,
+    parameter logic ON_330 = 0
+)
     (input shortint x, y, x1, y1,
      output logic valid);
 
@@ -74,19 +89,28 @@ module radius_check
 
         // hard code cases because this probably synthesizes
         // better than Euclidean distance
-        valid = ((dx == 0 && dy == -2)
+        valid = ((dx == 0 && dy == -2 && ON_270)
               || (dx == 0 && dy == -1)
               || (dx == 0 && dy == 0)
               || (dx == 0 && dy == 1)
-              || (dx == 0 && dy == 2)
+              || (dx == 0 && dy == 2 && ON_90)
               || (dx == 1 && dy == -1)
               || (dx == 1 && dy == 0)
               || (dx == 1 && dy == 1)
               || (dx == -1 && dy == -1)
               || (dx == -1 && dy == 0)
               || (dx == -1 && dy == 1)
-              || (dx == 2 && dy == 0)
-              || (dx == -2 && dy == 0));
+              || (dx == 2 && dy == 0 && ON_0)
+              || (dx == -2 && dy == 0 && ON_180)
+              || (dx == 2 && dy == 1 && ON_30)
+              || (dx == 1 && dy == 2 && ON_60)
+              || (dx == -1 && dy == 2 && ON_120)
+              || (dx == -2 && dy == 1 && ON_150)
+              || (dx == -2 && dy == -1 && ON_210)
+              || (dx == -1 && dy == -2 && ON_240)
+              || (dx == 1 && dy == -2 && ON_300)
+              || (dx == 2 && dy == -1 && ON_330)
+            );
     end
     
 endmodule: radius_check

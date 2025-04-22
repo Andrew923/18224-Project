@@ -79,8 +79,8 @@ module imu_multi (
 		case (curr_state)
 			5'd1: addr <= 8'h18;
 			5'd2: addr <= 8'h13;
-			5'd3: addr <= 8'h10;
-			5'd4: addr <= 8'h11;
+			5'd3: addr <= 8'h11;
+			5'd4: addr <= 8'h10;
 			5'd6: addr <= 8'h22;
 		endcase
 		case (curr_state)
@@ -90,14 +90,14 @@ module imu_multi (
 			5'd4: wdata <= 8'b01100000;
 		endcase
 	end
-	function automatic [15:0] sv2v_cast_16;
-		input reg [15:0] inp;
-		sv2v_cast_16 = inp;
+	function automatic signed [15:0] sv2v_cast_16_signed;
+		input reg signed [15:0] inp;
+		sv2v_cast_16_signed = inp;
 	endfunction
 	always @(posedge clk)
 		case (curr_state)
 			5'd5: next_data <= 96'd0;
-			5'd6: next_data <= {sv2v_cast_16({rdata[15:8], rdata[7:0]}), sv2v_cast_16({rdata[31:24], rdata[23:16]}), sv2v_cast_16({rdata[47:40], rdata[39:32]}), sv2v_cast_16({rdata[63:56], rdata[55:48]}), sv2v_cast_16({rdata[79:72], rdata[71:64]}), sv2v_cast_16({rdata[95:88], rdata[87:80]})};
+			5'd6: next_data <= {sv2v_cast_16_signed({rdata[15:8], rdata[7:0]}), sv2v_cast_16_signed({rdata[31:24], rdata[23:16]}), sv2v_cast_16_signed({rdata[47:40], rdata[39:32]}), sv2v_cast_16_signed({rdata[63:56], rdata[55:48]}), sv2v_cast_16_signed({rdata[79:72], rdata[71:64]}), sv2v_cast_16_signed({rdata[95:88], rdata[87:80]})};
 		endcase
 	parameter WAIT_CYCLES = 4000000;
 	wire [$clog2(WAIT_CYCLES + 1):0] wait_idx;

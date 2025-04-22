@@ -34,16 +34,16 @@ module ws2812 (
             // reverse even rows
             for (int led_idx = start; led_idx < start + 16; led_idx++) begin
                 data[(start << 1) + 15 - led_idx] = '{
-                    red: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0,
-                    green: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0,
-                    blue: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0
+                    red: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[7] | led_idx[6]): 8'd0,
+                    green: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[6] | led_idx[5]): 8'd0,
+                    blue: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[5] | led_idx[4]): 8'd0
                 };
             end
             for (int led_idx = start + 16; led_idx < start + 32; led_idx++) begin
                 data[led_idx] = '{
-                    red: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0,
-                    green: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0,
-                    blue: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 : 8'd0
+                    red: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[7] | led_idx[6]): 8'd0,
+                    green: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[6] | led_idx[5]): 8'd0,
+                    blue: old_matrix[led_idx >> 4][led_idx & 15] ? 8'd4 + (led_idx[5] | led_idx[4]): 8'd0
                 };
             end
         end

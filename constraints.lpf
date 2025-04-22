@@ -7,8 +7,8 @@ IOBUF  PORT "clk" PULLMODE=NONE IO_TYPE=LVCMOS33;
 FREQUENCY PORT "clk" 20 MHZ;
 
 # Sets up reset button
-LOCATE COMP "rst_n" SITE "R1"; #R1 or T1 idk
-IOBUF  PORT "rst_n" PULLMODE=UP IO_TYPE=LVCMOS33;
+LOCATE COMP "rst" SITE "T1"; #R1 or T1 idk
+IOBUF  PORT "rst" PULLMODE=DOWN IO_TYPE=LVCMOS33;
 
 # Sets up led_data
 LOCATE COMP "led_data" SITE "D13";

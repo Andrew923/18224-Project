@@ -1,5 +1,8 @@
 `default_nettype none
 
+// debug macro since pll doesn't work well with cocotb
+// `define DEBUG
+
 module ChipInterface
   (output logic led_data,
    output logic [7:0] led,
@@ -9,9 +12,10 @@ module ChipInterface
    input logic SDO,
    input logic btn_left, btn_right,
    input logic btn_up, btn_down,
-   input logic rst_n, clk);
+   input logic rst, clk);
 
-  logic reset;
+  logic reset, locked;
+  logic clk10;
   data_t data;
   logic matrix[15:0][15:0];
 
@@ -21,17 +25,27 @@ module ChipInterface
     .imu_data(data),
     .matrix(matrix),
     .o_out(led_data));
+  `ifdef DEBUG
+  logic toggle;
+  always_ff @(posedge clk) begin
+    toggle <= ~toggle;
+    if (toggle)
+      clk10 <= ~clk10;
+  end
+  `else
+  pll spc_clock(.*);
+  `endif
   imu_multi sensor(
     .reset(reset),
     .SDO(SDO),
-    .clk(clk), // pll no longer needed b/c clock division in module
+    .clk(clk),
     .CS(CS),
     .SPC(SPC),
     .SDI(SDI),
     .curr_data(data));
   physics simulator(
     .data(data),
-    .clk(clk),
+    .clk(clk10),
     .reset(reset),
     .btn_left(btn_left),
     .btn_right(btn_right),
@@ -40,7 +54,14 @@ module ChipInterface
     .matrix(matrix));
 
   always_comb begin
-    led = data[7:0];
-    reset = ~rst_n;
+    led[7:6] = data.x[15:14];
+    led[5] = 1'b0;
+    led[4:3] = data.y[15:14];
+    led[2:0] = data.z[15:13];
+    `ifdef DEBUG
+    reset = rst;
+    `else
+    reset = ~locked || rst;
+    `endif
   end
 endmodule: ChipInterface

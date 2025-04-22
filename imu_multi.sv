@@ -19,12 +19,12 @@
 // - OUTZ_L_A 0x2C 11
 // - OUTZ_H_A 0x2D 12
 typedef struct packed {
-  logic [15:0] pitch; // OUTX_{L, H}_G
-  logic [15:0] roll; // OUTY_{L, H}_G
-  logic [15:0] yaw; // OUTZ_{L, H}_G
-  logic [15:0] x; // OUTX_{L, H}_A
-  logic [15:0] y; // OUTY_{L, H}_A
-  logic [15:0] z; // OUTZ_{L, H}_A
+  logic signed [15:0] pitch; // OUTX_{L, H}_G
+  logic signed [15:0] roll; // OUTY_{L, H}_G
+  logic signed [15:0] yaw; // OUTZ_{L, H}_G
+  logic signed [15:0] x; // OUTX_{L, H}_A
+  logic signed [15:0] y; // OUTY_{L, H}_A
+  logic signed [15:0] z; // OUTZ_{L, H}_A
 } data_t;
 
 // uses single byte spi internal module for writes

@@ -10,7 +10,7 @@ module ChipInterface (
 	btn_right,
 	btn_up,
 	btn_down,
-	rst_n,
+	rst,
 	clk
 );
 	output wire led_data;
@@ -23,9 +23,11 @@ module ChipInterface (
 	input wire btn_right;
 	input wire btn_up;
 	input wire btn_down;
-	input wire rst_n;
+	input wire rst;
 	input wire clk;
 	reg reset;
+	wire locked;
+	wire clk10;
 	wire [95:0] data;
 	wire [255:0] matrix;
 	ws2812 led_module(
@@ -34,6 +36,11 @@ module ChipInterface (
 		.imu_data(data),
 		.matrix(matrix),
 		.o_out(led_data)
+	);
+	pll spc_clock(
+		.clk(clk),
+		.clk10(clk10),
+		.locked(locked)
 	);
 	imu_multi sensor(
 		.reset(reset),
@@ -46,7 +53,7 @@ module ChipInterface (
 	);
 	physics simulator(
 		.data(data),
-		.clk(clk),
+		.clk(clk10),
 		.reset(reset),
 		.btn_left(btn_left),
 		.btn_right(btn_right),
@@ -55,7 +62,10 @@ module ChipInterface (
 		.matrix(matrix)
 	);
 	always @(*) begin
-		led = data[7:0];
-		reset = ~rst_n;
+		led[7:6] = data[47:46];
+		led[5] = 1'b0;
+		led[4:3] = data[31:30];
+		led[2:0] = data[15:13];
+		reset = ~locked || rst;
 	end
 endmodule

@@ -34,5 +34,7 @@ Because most of the issues stem from collision detection, I went
 back to ideation and came up with the idea of just having one fat particle.
 To make this still somewhat complex and look cool, it would need to be
 blobby. With soft body physics, we can tie some particles together
-with spring forces.
+with spring forces. This is the final thing I did, and it's like kind
+of okay I guess but displaying the particle in a way that makes it look
+blobby is more difficult than expected.
 

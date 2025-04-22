@@ -39,12 +39,9 @@ module physics (
 	wire signed [15:0] p2vx;
 	wire signed [15:0] p2vy;
 	particle #(
-		.MASS(16),
+		.MASS(31),
 		.INIT_X(128),
 		.INIT_Y(128),
-		.REST0(32),
-		.REST1(32),
-		.REST2(32),
 		.PHASE_OFFSET(0)
 	) center(
 		.x0(p0x),
@@ -62,10 +59,7 @@ module physics (
 		.m2(p2m),
 		.vx2(p2vx),
 		.vy2(p2vy),
-		.btn_left(btn_left),
-		.btn_right(btn_right),
-		.btn_up(btn_up),
-		.btn_down(btn_down),
+		.data(data),
 		.clk(clk),
 		.reset(reset),
 		.x(cx),
@@ -78,9 +72,9 @@ module physics (
 		.MASS(8),
 		.INIT_X(128),
 		.INIT_Y(96),
-		.REST0(32),
-		.REST1(71),
-		.REST2(71),
+		.REST0(64),
+		.REST1(320),
+		.REST2(320),
 		.PHASE_OFFSET(100)
 	) peripheral0(
 		.x0(cx),
@@ -98,10 +92,7 @@ module physics (
 		.m2(p2m),
 		.vx2(p2vx),
 		.vy2(p2vy),
-		.btn_left(btn_left),
-		.btn_right(btn_right),
-		.btn_up(btn_up),
-		.btn_down(btn_down),
+		.data(data),
 		.clk(clk),
 		.reset(reset),
 		.x(p0x),
@@ -114,9 +105,9 @@ module physics (
 		.MASS(8),
 		.INIT_X(96),
 		.INIT_Y(160),
-		.REST0(71),
-		.REST1(32),
-		.REST2(71),
+		.REST0(320),
+		.REST1(64),
+		.REST2(320),
 		.PHASE_OFFSET(200)
 	) peripheral1(
 		.x0(p0x),
@@ -134,10 +125,7 @@ module physics (
 		.m2(p2m),
 		.vx2(p2vx),
 		.vy2(p2vy),
-		.btn_left(btn_left),
-		.btn_right(btn_right),
-		.btn_up(btn_up),
-		.btn_down(btn_down),
+		.data(data),
 		.clk(clk),
 		.reset(reset),
 		.x(p1x),
@@ -150,9 +138,9 @@ module physics (
 		.MASS(8),
 		.INIT_X(160),
 		.INIT_Y(160),
-		.REST0(71),
-		.REST1(71),
-		.REST2(32),
+		.REST0(320),
+		.REST1(320),
+		.REST2(64),
 		.PHASE_OFFSET(300)
 	) peripheral2(
 		.x0(p0x),
@@ -170,10 +158,7 @@ module physics (
 		.m2(cm),
 		.vx2(cvx),
 		.vy2(cvy),
-		.btn_left(btn_left),
-		.btn_right(btn_right),
-		.btn_up(btn_up),
-		.btn_down(btn_down),
+		.data(data),
 		.clk(clk),
 		.reset(reset),
 		.x(p2x),
@@ -197,28 +182,80 @@ module physics (
 	generate
 		for (yy = 0; yy < 16; yy = yy + 1) begin : genblk1
 			for (xx = 0; xx < 16; xx = xx + 1) begin : genblk1
-				radius_check c(
+				radius_check #(
+					.ON_0(1),
+					.ON_30(1),
+					.ON_60(1),
+					.ON_90(1),
+					.ON_120(1),
+					.ON_150(1),
+					.ON_180(1),
+					.ON_210(1),
+					.ON_240(1),
+					.ON_270(1),
+					.ON_300(1),
+					.ON_330(1)
+				) c(
 					.x(xx),
 					.y(yy),
 					.x1(cx >> 4),
 					.y1(cy >> 4),
 					.valid(valid[(((yy << 4) + xx) << 2) + 0])
 				);
-				radius_check p0(
+				radius_check #(
+					.ON_0(1),
+					.ON_30(0),
+					.ON_60(0),
+					.ON_90(0),
+					.ON_120(0),
+					.ON_150(0),
+					.ON_180(1),
+					.ON_210(0),
+					.ON_240(0),
+					.ON_270(1),
+					.ON_300(0),
+					.ON_330(0)
+				) p0(
 					.x(xx),
 					.y(yy),
 					.x1(p0x >> 4),
 					.y1(p0y >> 4),
 					.valid(valid[(((yy << 4) + xx) << 2) + 1])
 				);
-				radius_check p1(
+				radius_check #(
+					.ON_0(1),
+					.ON_30(0),
+					.ON_60(0),
+					.ON_90(1),
+					.ON_120(0),
+					.ON_150(0),
+					.ON_180(0),
+					.ON_210(0),
+					.ON_240(0),
+					.ON_270(0),
+					.ON_300(0),
+					.ON_330(0)
+				) p1(
 					.x(xx),
 					.y(yy),
 					.x1(p1x >> 4),
 					.y1(p1y >> 4),
 					.valid(valid[(((yy << 4) + xx) << 2) + 2])
 				);
-				radius_check p2(
+				radius_check #(
+					.ON_0(0),
+					.ON_30(0),
+					.ON_60(0),
+					.ON_90(1),
+					.ON_120(0),
+					.ON_150(0),
+					.ON_180(1),
+					.ON_210(0),
+					.ON_240(0),
+					.ON_270(0),
+					.ON_300(0),
+					.ON_330(0)
+				) p2(
 					.x(xx),
 					.y(yy),
 					.x1(p2x >> 4),
