@@ -76,11 +76,11 @@ module particle
   // mux for multa, multb
   always_comb begin
     case (idx)
-      PHASE_OFFSET + 9: begin
+      PHASE_OFFSET + 11: begin
         multa = px - x0;
         multb = px - x0;
       end
-      PHASE_OFFSET + 10: begin
+      PHASE_OFFSET + 12: begin
         multa = py - y0;
         multb = py - y0;
       end
@@ -93,18 +93,18 @@ module particle
         multb = dy0;
       end
       PHASE_OFFSET + 20: begin
-        multa = (displace0 << ($clog2(M0) - 3)) + damp0;
-        multb = dx0;
+        multa = (displace0 >>> (6 - $clog2(M0))) + damp0;
+        multb = dx0 >>> 2;
       end
       PHASE_OFFSET + 21: begin
-        multa = (displace0 << ($clog2(M0) - 3)) + damp0;
-        multb = dy0;
+        multa = (displace0 >>> (6 - $clog2(M0))) + damp0;
+        multb = dy0 >>> 2;
       end
-      PHASE_OFFSET + 22: begin
+      PHASE_OFFSET + 24: begin
         multa = px - x1;
         multb = px - x1;
       end
-      PHASE_OFFSET + 23: begin
+      PHASE_OFFSET + 25: begin
         multa = py - y1;
         multb = py - y1;
       end
@@ -116,13 +116,13 @@ module particle
         multa = rel_vel_y1;
         multb = dy1;
       end
-      PHASE_OFFSET + 33: begin
-        multa = (displace1 << ($clog2(M1) - 3)) + damp1;
-        multb = dx1;
+      PHASE_OFFSET + 37: begin
+        multa = (displace1 >>> (6 - $clog2(M1))) + damp1;
+        multb = dx1 >>> 2;
       end
-      PHASE_OFFSET + 34: begin
-        multa = (displace1 << ($clog2(M1) - 3)) + damp1;
-        multb = dy1;
+      PHASE_OFFSET + 38: begin
+        multa = (displace1 >>> (6 - $clog2(M1))) + damp1;
+        multb = dy1 >>> 2;
       end
       PHASE_OFFSET + 35: begin
         multa = px - x2;
@@ -141,12 +141,12 @@ module particle
         multb = dy2;
       end
       PHASE_OFFSET + 46: begin
-        multa = (displace2 << ($clog2(M2) - 3)) + damp2;
-        multb = dx2;
+        multa = (displace2 >>> (6 - $clog2(M2))) + damp2;
+        multb = dx2 >>> 2;
       end
       PHASE_OFFSET + 47: begin
-        multa = (displace2 << ($clog2(M2) - 3)) + damp2;
-        multb = dy2;
+        multa = (displace2 >>> (6 - $clog2(M2))) + damp2;
+        multb = dy2 >>> 2;
       end
       default: begin
         multa = 0;
@@ -213,32 +213,26 @@ module particle
         //////////////////////////////
         PHASE_OFFSET + 9: begin
           dx0 <= px - x0;
-          dx0_2 <= (multa * multb) >>> 4; // dx^2
         end
         PHASE_OFFSET + 10: begin
           dy0 <= py - y0;
-          dy0_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 11: begin
-          // euclidean distance squared
-          d0 <= dx0_2 + dy0_2; // no sqrt :(
+          dx0_2 <= (multa * multb) >>> 4; // dx^2
         end
         //////////////////////////////
         // Phases 12-16: parameter update
         //////////////////////////////
         PHASE_OFFSET + 12: begin
-          if (d0 > 0) begin
-            dx0 <= dx0 / d0;
-          end
+          dy0_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 13: begin
-          if (d0 > 0) begin
-            dy0 <= dy0 / d0;
-          end
+          // euclidean distance squared
+          d0 <= dx0_2 + dy0_2; // no sqrt :(
         end
         PHASE_OFFSET + 14: begin
           if (d0 > 0) begin
-            displace0 <= d0 - REST0;
+            displace0 <= REST0 - d0;
           end
         end
         PHASE_OFFSET + 15: begin
@@ -285,28 +279,22 @@ module particle
         //////////////////////////////
         PHASE_OFFSET + 22: begin
           dx1 <= px - x1;
-          dx1_2 <= (multa * multb) >>> 4; // dx^2
         end
         PHASE_OFFSET + 23: begin
           dy1 <= py - y1;
-          dy1_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 24: begin
-          // euclidean distance squared
-          d1 <= dx1_2 + dy1_2; // no sqrt :(
+          dx1_2 <= (multa * multb) >>> 4; // dx^2
         end
         //////////////////////////////
         // Phases 25-29: parameter update
         //////////////////////////////
         PHASE_OFFSET + 25: begin
-          if (d1 > 0) begin
-            dx1 <= dx1 / d1;
-          end
+          dy1_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 26: begin
-          if (d1 > 0) begin
-            dy1 <= dy1 / d1;
-          end
+          // euclidean distance squared
+          d1 <= dx1_2 + dy1_2; // no sqrt :(
         end
         PHASE_OFFSET + 27: begin
           if (d1 > 0) begin
@@ -357,28 +345,22 @@ module particle
         //////////////////////////////
         PHASE_OFFSET + 35: begin
           dx2 <= px - x2;
-          dx2_2 <= (multa * multb) >>> 4; // dx^2
         end
         PHASE_OFFSET + 36: begin
           dy2 <= py - y2;
-          dy2_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 37: begin
-          // euclidean distance squared
-          d2 <= dx2_2 + dy2_2; // no sqrt :(
+          dx2_2 <= (multa * multb) >>> 4; // dx^2
         end
         //////////////////////////////
         // Phases 38-42: parameter update
         //////////////////////////////
         PHASE_OFFSET + 38: begin
-          if (d2 > 0) begin
-            dx2 <= dx2 / d2;
-          end
+          dy2_2 <= (multa * multb) >>> 4; // dy^2
         end
         PHASE_OFFSET + 39: begin
-          if (d2 > 0) begin
-            dy2 <= dy2 / d2;
-          end
+          // euclidean distance squared
+          d2 <= dx2_2 + dy2_2; // no sqrt :(
         end
         PHASE_OFFSET + 40: begin
           if (d2 > 0) begin

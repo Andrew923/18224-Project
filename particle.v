@@ -42,7 +42,7 @@ module particle (
 	input wire signed [15:0] y2;
 	input wire signed [15:0] vx2;
 	input wire signed [15:0] vy2;
-	input wire [95:0] data;
+	input data_t data;
 	input wire clk;
 	input wire reset;
 	output reg signed [15:0] x;
@@ -100,10 +100,10 @@ module particle (
 	parameter TOTAL_CYCLES = 300000;
 	wire [$clog2(TOTAL_CYCLES + 1):0] idx;
 	wire clear;
-	Counter #(.WIDTH($clog2(TOTAL_CYCLES + 1) + 1)) counter(
-		.clock(clk),
-		.clear(clear),
-		.Q(idx)
+	Counter #($clog2(TOTAL_CYCLES + 1) + 1) counter(
+		clk,
+		clear,
+		idx
 	);
 	assign clear = reset;
 	always @(*) begin
@@ -114,11 +114,11 @@ module particle (
 	end
 	always @(*)
 		case (idx)
-			PHASE_OFFSET + 9: begin
+			PHASE_OFFSET + 11: begin
 				multa = px - x0;
 				multb = px - x0;
 			end
-			PHASE_OFFSET + 10: begin
+			PHASE_OFFSET + 12: begin
 				multa = py - y0;
 				multb = py - y0;
 			end
@@ -131,18 +131,18 @@ module particle (
 				multb = dy0;
 			end
 			PHASE_OFFSET + 20: begin
-				multa = (displace0 << ($clog2(M0) - 3)) + damp0;
-				multb = dx0;
+				multa = (displace0 >>> (6 - $clog2(M0))) + damp0;
+				multb = dx0 >>> 2;
 			end
 			PHASE_OFFSET + 21: begin
-				multa = (displace0 << ($clog2(M0) - 3)) + damp0;
-				multb = dy0;
+				multa = (displace0 >>> (6 - $clog2(M0))) + damp0;
+				multb = dy0 >>> 2;
 			end
-			PHASE_OFFSET + 22: begin
+			PHASE_OFFSET + 24: begin
 				multa = px - x1;
 				multb = px - x1;
 			end
-			PHASE_OFFSET + 23: begin
+			PHASE_OFFSET + 25: begin
 				multa = py - y1;
 				multb = py - y1;
 			end
@@ -154,13 +154,13 @@ module particle (
 				multa = rel_vel_y1;
 				multb = dy1;
 			end
-			PHASE_OFFSET + 33: begin
-				multa = (displace1 << ($clog2(M1) - 3)) + damp1;
-				multb = dx1;
+			PHASE_OFFSET + 37: begin
+				multa = (displace1 >>> (6 - $clog2(M1))) + damp1;
+				multb = dx1 >>> 2;
 			end
-			PHASE_OFFSET + 34: begin
-				multa = (displace1 << ($clog2(M1) - 3)) + damp1;
-				multb = dy1;
+			PHASE_OFFSET + 38: begin
+				multa = (displace1 >>> (6 - $clog2(M1))) + damp1;
+				multb = dy1 >>> 2;
 			end
 			PHASE_OFFSET + 35: begin
 				multa = px - x2;
@@ -179,12 +179,12 @@ module particle (
 				multb = dy2;
 			end
 			PHASE_OFFSET + 46: begin
-				multa = (displace2 << ($clog2(M2) - 3)) + damp2;
-				multb = dx2;
+				multa = (displace2 >>> (6 - $clog2(M2))) + damp2;
+				multb = dx2 >>> 2;
 			end
 			PHASE_OFFSET + 47: begin
-				multa = (displace2 << ($clog2(M2) - 3)) + damp2;
-				multb = dy2;
+				multa = (displace2 >>> (6 - $clog2(M2))) + damp2;
+				multb = dy2 >>> 2;
 			end
 			default: begin
 				multa = 0;
@@ -216,24 +216,14 @@ module particle (
 				PHASE_OFFSET + 6: vy <= (py - py_old) >>> 1;
 				PHASE_OFFSET + 7: px_old <= px;
 				PHASE_OFFSET + 8: py_old <= py;
-				PHASE_OFFSET + 9: begin
-					dx0 <= px - x0;
-					dx0_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 10: begin
-					dy0 <= py - y0;
-					dy0_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 11: d0 <= dx0_2 + dy0_2;
-				PHASE_OFFSET + 12:
-					if (d0 > 0)
-						dx0 <= dx0 / d0;
-				PHASE_OFFSET + 13:
-					if (d0 > 0)
-						dy0 <= dy0 / d0;
+				PHASE_OFFSET + 9: dx0 <= px - x0;
+				PHASE_OFFSET + 10: dy0 <= py - y0;
+				PHASE_OFFSET + 11: dx0_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 12: dy0_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 13: d0 <= dx0_2 + dy0_2;
 				PHASE_OFFSET + 14:
 					if (d0 > 0)
-						displace0 <= d0 - REST0;
+						displace0 <= REST0 - d0;
 				PHASE_OFFSET + 15:
 					if (d0 > 0)
 						rel_vel_x0 <= vx - vx0;
@@ -255,21 +245,11 @@ module particle (
 				PHASE_OFFSET + 21:
 					if (d0 > 0)
 						ay <= ay + ((multa * multb) >>> 4);
-				PHASE_OFFSET + 22: begin
-					dx1 <= px - x1;
-					dx1_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 23: begin
-					dy1 <= py - y1;
-					dy1_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 24: d1 <= dx1_2 + dy1_2;
-				PHASE_OFFSET + 25:
-					if (d1 > 0)
-						dx1 <= dx1 / d1;
-				PHASE_OFFSET + 26:
-					if (d1 > 0)
-						dy1 <= dy1 / d1;
+				PHASE_OFFSET + 22: dx1 <= px - x1;
+				PHASE_OFFSET + 23: dy1 <= py - y1;
+				PHASE_OFFSET + 24: dx1_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 25: dy1_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 26: d1 <= dx1_2 + dy1_2;
 				PHASE_OFFSET + 27:
 					if (d1 > 0)
 						displace1 <= d1 - REST1;
@@ -294,21 +274,11 @@ module particle (
 				PHASE_OFFSET + 34:
 					if (d1 > 0)
 						ay <= ay + ((multa * multb) >>> 4);
-				PHASE_OFFSET + 35: begin
-					dx2 <= px - x2;
-					dx2_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 36: begin
-					dy2 <= py - y2;
-					dy2_2 <= (multa * multb) >>> 4;
-				end
-				PHASE_OFFSET + 37: d2 <= dx2_2 + dy2_2;
-				PHASE_OFFSET + 38:
-					if (d2 > 0)
-						dx2 <= dx2 / d2;
-				PHASE_OFFSET + 39:
-					if (d2 > 0)
-						dy2 <= dy2 / d2;
+				PHASE_OFFSET + 35: dx2 <= px - x2;
+				PHASE_OFFSET + 36: dy2 <= py - y2;
+				PHASE_OFFSET + 37: dx2_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 38: dy2_2 <= (multa * multb) >>> 4;
+				PHASE_OFFSET + 39: d2 <= dx2_2 + dy2_2;
 				PHASE_OFFSET + 40:
 					if (d2 > 0)
 						displace2 <= d2 - REST2;
@@ -392,7 +362,7 @@ module center (
 	input wire signed [15:0] y2;
 	input wire signed [15:0] vx2;
 	input wire signed [15:0] vy2;
-	input wire [95:0] data;
+	input data_t data;
 	input wire clk;
 	input wire reset;
 	output reg signed [15:0] x;
@@ -415,10 +385,10 @@ module center (
 	parameter TOTAL_CYCLES = 300000;
 	wire [$clog2(TOTAL_CYCLES + 1):0] idx;
 	wire clear;
-	Counter #(.WIDTH($clog2(TOTAL_CYCLES + 1) + 1)) counter(
-		.clock(clk),
-		.clear(clear),
-		.Q(idx)
+	Counter #($clog2(TOTAL_CYCLES + 1) + 1) counter(
+		clk,
+		clear,
+		idx
 	);
 	assign clear = reset;
 	function automatic signed [15:0] sv2v_cast_16_signed;
@@ -430,8 +400,8 @@ module center (
 		y = py;
 		vel_x = vx;
 		vel_y = vy;
-		imu_x = sv2v_cast_16_signed($signed(data[47-:16]));
-		imu_y = sv2v_cast_16_signed($signed(data[31-:16]));
+		imu_x = sv2v_cast_16_signed(data.x);
+		imu_y = sv2v_cast_16_signed(data.y);
 	end
 	always @(posedge clk)
 		if (reset) begin
