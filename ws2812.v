@@ -21,6 +21,10 @@ module ws2812 (
 	reg [(NUM_LEDS * 24) - 1:0] data;
 	wire in_bounds;
 	wire done;
+	function automatic [7:0] sv2v_cast_8;
+		input reg [7:0] inp;
+		sv2v_cast_8 = inp;
+	endfunction
 	always @(*) begin : sv2v_autoblock_1
 		reg signed [31:0] start;
 		for (start = 0; start < 256; start = start + 32)
@@ -28,12 +32,12 @@ module ws2812 (
 				begin : sv2v_autoblock_2
 					reg signed [31:0] led_idx;
 					for (led_idx = start; led_idx < (start + 16); led_idx = led_idx + 1)
-						data[((NUM_LEDS - 1) - (((start << 1) + 15) - led_idx)) * 24+:24] = {(old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0), (old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0), (old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0)};
+						data[((NUM_LEDS - 1) - (((start << 1) + 15) - led_idx)) * 24+:24] = {sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 6) & 3) : 8'd0)), sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 5) & 3) : 8'd0)), sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 4) & 3) : 8'd0))};
 				end
 				begin : sv2v_autoblock_3
 					reg signed [31:0] led_idx;
 					for (led_idx = start + 16; led_idx < (start + 32); led_idx = led_idx + 1)
-						data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {(old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0), (old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0), (old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 : 8'd0)};
+						data[((NUM_LEDS - 1) - led_idx) * 24+:24] = {sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 6) & 3) : 8'd0)), sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 5) & 3) : 8'd0)), sv2v_cast_8((old_matrix[((led_idx >> 4) * 16) + (led_idx & 15)] ? 8'd4 + ((led_idx >> 4) & 3) : 8'd0))};
 				end
 			end
 	end

@@ -20,11 +20,11 @@ async def waveform_test(dut):
     dut.reset.value = 0
 
     #generate interesting movements by varying x and y
-    dut.data.value = (0b1101_0000_0000_0000) << 32
+    dut.data.value = (0b1101_1000_0000_0000) << 32
     for _ in range(10_000):
         await step_clock(dut)
 
-    dut.data.value = (0b1101_0000_0000_0000) << 16
+    dut.data.value = (0b1101_1000_0000_0000) << 16
     for _ in range(10_000):
         await step_clock(dut)
 

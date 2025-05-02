@@ -62,10 +62,8 @@ module ChipInterface (
 		.matrix(matrix)
 	);
 	always @(*) begin
-		led[7:6] = data[47:46];
-		led[5] = 1'b0;
-		led[4:3] = data[31:30];
-		led[2:0] = data[15:13];
+		led[7:4] = data[47:44];
+		led[3:0] = data[31:28];
 		reset = ~locked || rst;
 	end
 endmodule

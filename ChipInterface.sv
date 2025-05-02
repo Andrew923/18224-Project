@@ -54,10 +54,8 @@ module ChipInterface
     .matrix(matrix));
 
   always_comb begin
-    led[7:6] = data.x[15:14];
-    led[5] = 1'b0;
-    led[4:3] = data.y[15:14];
-    led[2:0] = data.z[15:13];
+    led[7:4] = data.x[15:12];
+    led[3:0] = data.y[15:12];
     `ifdef DEBUG
     reset = rst;
     `else
